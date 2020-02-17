@@ -1,0 +1,6 @@
+version: "3"
+services:
+  consent-process:
+    image: dtok/water-data-consents:dev
+    volumes:
+      - /media/waterdata1/git/WaterDataConsents/parameters-dev.yml:/parameters.yml
