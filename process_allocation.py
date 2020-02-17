@@ -269,6 +269,8 @@ def process_allo(param):
     rv1.loc[rv1.HydroGroup == 'Groundwater', 'AllocationBlock'] = rv1.loc[rv1.HydroGroup == 'Groundwater', 'GwAllocationBlock']
     rv1.drop(['SwAllocationBlock', 'GwAllocationBlock'], axis=1, inplace=True)
 
+    rv1 = rv1.groupby(['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap']).sum().reset_index()
+
     ## Deal with the "Include in Allocation" fields
     rv1a = pd.merge(rv1, allo_rates1.reset_index()[['RecordNumber', 'Wap', 'FromMonth', 'ToMonth', 'IncludeInSwAllocation']], on=['RecordNumber', 'Wap'])
     rv2 = pd.merge(rv1a, vols1[['RecordNumber', 'Wap', 'IncludeInGwAllocation']], on=['RecordNumber', 'Wap'])
