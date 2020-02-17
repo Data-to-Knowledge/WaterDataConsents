@@ -211,13 +211,15 @@ def process_allo(param):
     rates1.loc[alt_bool, 'Groundwater'] = rates1.loc[alt_bool, 'Rate150Day']  - rates1.loc[alt_bool, 'Surface Water']
 
     rates1.loc[direct_bool & gw_bool, 'Surface Water'] = rates1.loc[direct_bool & gw_bool, 'RateDaily']
+    rates1.loc[(direct_bool & gw_bool) & (rates1.Storativity | lf_cond_bool), 'Groundwater'] = 0
 
     rates1.loc[sw_bool, 'Surface Water'] = rates1.loc[sw_bool, 'AllocatedRate']
 
     rates2 = rates1[['Groundwater', 'Surface Water']].stack().reset_index()
     rates2.rename(columns={'level_3': 'HydroGroup', 0: 'AllocatedRate'}, inplace=True)
-    rates2.rename(columns={'SwAllocationBlock': 'AllocationBlock'}, inplace=True)
-    rates3 = rates2.drop_duplicates(['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap']).set_index(['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap'])
+#    rates2.rename(columns={'SwAllocationBlock': 'AllocationBlock'}, inplace=True)
+#    rates3 = rates2.drop_duplicates(['RecordNumber', 'HydroGroup', 'SwAllocationBlock', 'Wap']).set_index(['RecordNumber', 'HydroGroup', 'SwAllocationBlock', 'Wap'])
+    rates3 = rates2.drop_duplicates(['RecordNumber', 'HydroGroup', 'SwAllocationBlock', 'Wap'])
 
     ## Allocated Volume
     av1 = db.allocated_volume.drop('EffectiveFromDate', axis=1).copy()
@@ -256,14 +258,19 @@ def process_allo(param):
 
     vols2 = vols1.set_index(['RecordNumber', 'GwAllocationBlock', 'Wap'])[['Groundwater', 'Surface Water']].stack().reset_index()
     vols2.rename(columns={'level_3': 'HydroGroup', 0: 'AllocatedAnnualVolume'}, inplace=True)
-    vols2.rename(columns={'GwAllocationBlock': 'AllocationBlock'}, inplace=True)
-    vols3 = vols2.drop_duplicates(['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap']).set_index(['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap'])
+#    vols2.rename(columns={'GwAllocationBlock': 'AllocationBlock'}, inplace=True)
+#    vols3 = vols2.drop_duplicates(['RecordNumber', 'HydroGroup', 'GwAllocationBlock', 'Wap']).set_index(['RecordNumber', 'HydroGroup', 'GwAllocationBlock', 'Wap'])
+    vols3 = vols2.drop_duplicates(['RecordNumber', 'HydroGroup', 'GwAllocationBlock', 'Wap'])
 
     # Join rates and volumes
-    rv1 = pd.concat([rates3, vols3], axis=1)
+#    rv1 = pd.concat([rates3, vols3], axis=1)
+    rv1 = pd.merge(rates3, vols3, on=['RecordNumber', 'HydroGroup', 'Wap'])
+    rv1['AllocationBlock'] = rv1['SwAllocationBlock']
+    rv1.loc[rv1.HydroGroup == 'Groundwater', 'AllocationBlock'] = rv1.loc[rv1.HydroGroup == 'Groundwater', 'GwAllocationBlock']
+    rv1.drop(['SwAllocationBlock', 'GwAllocationBlock'], axis=1, inplace=True)
 
     ## Deal with the "Include in Allocation" fields
-    rv1a = pd.merge(rv1.reset_index(), allo_rates1.reset_index()[['RecordNumber', 'Wap', 'FromMonth', 'ToMonth', 'IncludeInSwAllocation']], on=['RecordNumber', 'Wap'])
+    rv1a = pd.merge(rv1, allo_rates1.reset_index()[['RecordNumber', 'Wap', 'FromMonth', 'ToMonth', 'IncludeInSwAllocation']], on=['RecordNumber', 'Wap'])
     rv2 = pd.merge(rv1a, vols1[['RecordNumber', 'Wap', 'IncludeInGwAllocation']], on=['RecordNumber', 'Wap'])
     rv3 = rv2[(rv2.HydroGroup == 'Surface Water') | (rv2.IncludeInGwAllocation)].drop('IncludeInGwAllocation', axis=1)
     rv4 = rv3[(rv3.HydroGroup == 'Groundwater') | (rv3.IncludeInSwAllocation)].drop('IncludeInSwAllocation', axis=1)
