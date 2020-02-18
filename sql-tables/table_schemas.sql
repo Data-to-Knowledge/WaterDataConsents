@@ -25,12 +25,13 @@ create or replace TABLE "Waps" (
 	"SD1_150Day" INTEGER,
 	"Storativity" BOOLEAN,
 	"GwSpatialUnitId" text(100),
-    "SwSpatialUnitId" text(100),
-    "DistanceToSw" integer,
+  "SwSpatialUnitId" text(100),
+	"OSMWaterwayId" INTEGER,
+  "DistanceToWaterway" integer,
 	"Combined" BOOLEAN,
 	"NzTmX" INTEGER,
 	"NzTmY" INTEGER,
-    "EffectiveFromDate" TIMESTAMP(0),
+  "EffectiveFromDate" TIMESTAMP(0),
   CONSTRAINT pkWap PRIMARY KEY ("Wap")
 );
 
