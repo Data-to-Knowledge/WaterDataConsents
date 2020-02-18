@@ -269,7 +269,7 @@ def process_allo(param):
     rv1.loc[rv1.HydroGroup == 'Groundwater', 'AllocationBlock'] = rv1.loc[rv1.HydroGroup == 'Groundwater', 'GwAllocationBlock']
     rv1.drop(['SwAllocationBlock', 'GwAllocationBlock'], axis=1, inplace=True)
 
-    rv1 = rv1.groupby(['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap']).sum().reset_index()
+#    rv1 = rv1.groupby(['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap']).sum().reset_index()
 
     ## Deal with the "Include in Allocation" fields
     rv1a = pd.merge(rv1, allo_rates1.reset_index()[['RecordNumber', 'Wap', 'FromMonth', 'ToMonth', 'IncludeInSwAllocation']], on=['RecordNumber', 'Wap'])
@@ -287,6 +287,13 @@ def process_allo(param):
     rv4 = rv4[(rv4['AllocatedAnnualVolume'] > 0) | (rv4['AllocatedRate'] > 0)].copy()
     rv4.loc[rv4['AllocatedAnnualVolume'].isnull(), 'AllocatedAnnualVolume'] = 0
     rv4.loc[rv4['AllocatedRate'].isnull(), 'AllocatedRate'] = 0
+
+    ## Aggregate by crc, allo block, hydrogroup, and wap
+    rv_grp = rv4.groupby(['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap'])
+    sum1 = rv_grp[['AllocatedRate', 'AllocatedAnnualVolume']].sum()
+    other1 = rv_grp[['FromMonth', 'ToMonth']].first()
+
+    rv4 = pd.concat([sum1, other1], axis=1).reset_index()
 
     ## Convert the rates and volumes to integers
     rv4['AllocatedAnnualVolume'] = rv4['AllocatedAnnualVolume'].round().astype('int64')
