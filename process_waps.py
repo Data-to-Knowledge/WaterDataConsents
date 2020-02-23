@@ -43,7 +43,7 @@ def process_waps(param):
 
     sw_dict = param['source data']['sw_reaches']
 
-    setattr(db, 'sw_reaches', mssql.rd_sql(sw_dict['server'], sw_dict['database'], sw_dict['table'], sw_dict['col_names'], username=gw_dict['username'], password=gw_dict['password'], geo_col=True))
+    setattr(db, 'sw_reaches', mssql.rd_sql(sw_dict['server'], sw_dict['database'], sw_dict['table'], ['SpatialUnitId', 'OSMWaterwayId'], username=gw_dict['username'], password=gw_dict['password'], geo_col=True))
 
     ##################################################
     ### Waps
@@ -76,16 +76,16 @@ def process_waps(param):
 
     # SW
     sw1 = db.sw_reaches.copy()
-    sw1.rename(columns={'SpatialUnitID': 'SwSpatialUnitId'}, inplace=True)
+    sw1.rename(columns={'SpatialUnitId': 'SwSpatialUnitId'}, inplace=True)
 
     lst1 = []
     for index, row in sw1.iterrows():
         for j in list(row['geometry'].coords):
-            lst1.append([row['SwSpatialUnitId'], Point(j)])
-    df1 = pd.DataFrame(lst1, columns=['SwSpatialUnitId', 'geometry'])
+            lst1.append([row['SwSpatialUnitId'], row['OSMWaterwayId'], Point(j)])
+    df1 = pd.DataFrame(lst1, columns=['SwSpatialUnitId', 'OSMWaterwayId', 'geometry'])
     sw2 = gpd.GeoDataFrame(df1, geometry='geometry')
 
-    waps3b = vector.kd_nearest(waps3, sw2, 'SwSpatialUnitId')
+    waps3b = vector.kd_nearest(waps3, sw2, ['SwSpatialUnitId', 'OSMWaterwayId'])
 
     ## prepare output
     waps3b['NzTmX'] = waps3b.geometry.x
@@ -93,7 +93,7 @@ def process_waps(param):
 
     waps4 = pd.DataFrame(waps3b.drop(['geometry'], axis=1))
     waps4[['NzTmX', 'NzTmY']] = waps4[['NzTmX', 'NzTmY']].round().astype(int)
-    waps4.rename(columns={'Name': 'SpatialUnitName', 'distance': 'DistanceToSw'}, inplace=True)
+    waps4.rename(columns={'Name': 'SpatialUnitName', 'distance': 'DistanceToWaterway'}, inplace=True)
 
     ## Check for differences
     print('Save results')
