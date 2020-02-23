@@ -8,6 +8,7 @@ CREATE or replace TABLE "ConsentedAllocation" (
     "SpatialUnitId" TEXT(100),
     "Combined" Boolean,
     "ConsentStatus" TEXT(300),
+		"ApplicationStatus" TEXT(300),
     "FromDate" TIMESTAMP(0),
     "ToDate" TIMESTAMP(0),
   	"FromMonth" INTEGER,
