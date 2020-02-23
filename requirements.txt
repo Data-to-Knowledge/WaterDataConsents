@@ -2,7 +2,7 @@ pyyaml
 geopandas
 pandas
 pdsf
-requests
+requests<2.23.0
 pymssql==2.1.4
 pdsql
 gistools
