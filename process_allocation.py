@@ -300,7 +300,7 @@ def process_allo(param):
     rv4['AllocatedRate'] = rv4['AllocatedRate'].round().astype('int64')
 
     ## Combine with permit data
-    rv5 = pd.merge(rv4, permits2[['RecordNumber', 'ConsentStatus', 'FromDate', 'ToDate']], on='RecordNumber')
+    rv5 = pd.merge(rv4, permits2[['RecordNumber', 'ConsentStatus', 'ApplicationStatus', 'FromDate', 'ToDate']], on='RecordNumber')
 
     ## Combine with other Wap data
     waps1 = waps[['Wap', 'GwSpatialUnitId', 'SwSpatialUnitId', 'Combined']].copy()
@@ -316,7 +316,7 @@ def process_allo(param):
 
     ## Filter for active consents
     active_bool = rv6.ConsentStatus.isin(['Issued - Active', 'Issued - Inactive', 'Issued - s124 Continuance'])
-    in_process_bool = rv6.ConsentStatus.isin(['Application in Process'])
+    in_process_bool = rv6.ConsentStatus.isin(['Application in Process']) & rv6.ApplicationStatus.isin(['New Consent'])
 
     # GW
     gw1 = rv6[gw_bool & active_bool].copy()
@@ -365,7 +365,7 @@ def process_allo(param):
     sf.to_table(sw2, out_param['table'], out_param['username'], out_param['password'], out_param['account'], out_param['database'], out_param['schema'], True)
 
     ## Return
-    return rv6, zone3
+    return rv6, zone3, sw2
 
 
 

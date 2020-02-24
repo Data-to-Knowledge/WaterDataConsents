@@ -49,7 +49,7 @@ print('---Process the Waps')
 waps = process_waps(param)
 
 print('---Process the Allocation')
-allo1, zones = process_allo(param)
+allo1, gw_zones, sw_zones = process_allo(param)
 
 print('---Process the Limits')
 summ1 = process_limits(param)
