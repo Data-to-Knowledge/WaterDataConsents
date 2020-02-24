@@ -250,6 +250,7 @@ def process_allo(param):
     vols1['Surface Water'] = vols1['FullAnnualVolume'] * vols1['sw_vol_ratio']
     vols1['Groundwater'] = vols1['FullAnnualVolume']
     vols1.loc[vols1.TakeType == 'Take Surface Water', 'Groundwater'] = 0
+    vols1.loc[(vols1.TakeType == 'Take Surface Water') & (vols1['Surface Water'] == 0), 'Surface Water'] = np.nan
 
 #    discount_bool = ((vols1.sd_cat == 'moderate') & (vols1.Storativity)) | ((vols1.sd_cat == 'moderate') & vols1.Combined) | (vols1.sd_cat == 'high') | (vols1.sd_cat == 'direct')
     discount_bool = ((vols1.Storativity | vols1.LowflowCondition) & ((vols1.sd_cat == 'moderate') | (vols1.sd_cat == 'high') | (vols1.sd_cat == 'direct'))) | vols1.Combined
@@ -263,17 +264,21 @@ def process_allo(param):
     vols3 = vols2.drop_duplicates(['RecordNumber', 'HydroGroup', 'GwAllocationBlock', 'Wap'])
 
     # Join rates and volumes
-#    rv1 = pd.concat([rates3, vols3], axis=1)
     rv1 = pd.merge(rates3, vols3, on=['RecordNumber', 'HydroGroup', 'Wap'])
     rv1['AllocationBlock'] = rv1['SwAllocationBlock']
     rv1.loc[rv1.HydroGroup == 'Groundwater', 'AllocationBlock'] = rv1.loc[rv1.HydroGroup == 'Groundwater', 'GwAllocationBlock']
     rv1.drop(['SwAllocationBlock', 'GwAllocationBlock'], axis=1, inplace=True)
 
-#    rv1 = rv1.groupby(['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap']).sum().reset_index()
+    # Fix duplicates
+    rv1['Count'] = rv1.groupby(['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap'])['AllocatedRate'].transform('count')
+    rv1['AllocatedRate'] = rv1['AllocatedRate'] / rv1['Count']
+#    rv1['AllocatedAnnualVolume'] = rv1['AllocatedAnnualVolume'] / rv1['Count']
+
+    rv1 = rv1.groupby(['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap']).sum().reset_index()
 
     ## Deal with the "Include in Allocation" fields
-    rv1a = pd.merge(rv1, allo_rates1.reset_index()[['RecordNumber', 'Wap', 'FromMonth', 'ToMonth', 'IncludeInSwAllocation']], on=['RecordNumber', 'Wap'])
-    rv2 = pd.merge(rv1a, vols1[['RecordNumber', 'Wap', 'IncludeInGwAllocation']], on=['RecordNumber', 'Wap'])
+    rv1a = pd.merge(rv1.drop('Count', axis=1), allo_rates1.reset_index()[['RecordNumber', 'Wap', 'FromMonth', 'ToMonth', 'IncludeInSwAllocation']].drop_duplicates(['RecordNumber', 'Wap']), on=['RecordNumber', 'Wap'])
+    rv2 = pd.merge(rv1a, vols1[['RecordNumber', 'Wap', 'IncludeInGwAllocation']].drop_duplicates(['RecordNumber', 'Wap']), on=['RecordNumber', 'Wap'])
     rv3 = rv2[(rv2.HydroGroup == 'Surface Water') | (rv2.IncludeInGwAllocation)].drop('IncludeInGwAllocation', axis=1)
     rv4 = rv3[(rv3.HydroGroup == 'Groundwater') | (rv3.IncludeInSwAllocation)].drop('IncludeInSwAllocation', axis=1)
 
@@ -289,18 +294,18 @@ def process_allo(param):
     rv4.loc[rv4['AllocatedRate'].isnull(), 'AllocatedRate'] = 0
 
     ## Aggregate by crc, allo block, hydrogroup, and wap
-    rv_grp = rv4.groupby(['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap'])
-    sum1 = rv_grp[['AllocatedRate', 'AllocatedAnnualVolume']].sum()
-    other1 = rv_grp[['FromMonth', 'ToMonth']].first()
-
-    rv4 = pd.concat([sum1, other1], axis=1).reset_index()
+#    rv_grp = rv4.groupby(['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap'])
+#    sum1 = rv_grp[['AllocatedRate', 'AllocatedAnnualVolume']].sum()
+#    other1 = rv_grp[['FromMonth', 'ToMonth']].first()
+#
+#    rv4 = pd.concat([sum1, other1], axis=1).reset_index()
 
     ## Convert the rates and volumes to integers
     rv4['AllocatedAnnualVolume'] = rv4['AllocatedAnnualVolume'].round().astype('int64')
     rv4['AllocatedRate'] = rv4['AllocatedRate'].round().astype('int64')
 
     ## Combine with permit data
-    rv5 = pd.merge(rv4, permits2[['RecordNumber', 'ConsentStatus', 'ApplicationStatus', 'FromDate', 'ToDate']], on='RecordNumber')
+    rv5 = pd.merge(rv4, permits2[['RecordNumber', 'ConsentStatus', 'ApplicationStatus', 'FromDate', 'ToDate']].drop_duplicates('RecordNumber', keep='last'), on='RecordNumber')
 
     ## Combine with other Wap data
     waps1 = waps[['Wap', 'GwSpatialUnitId', 'SwSpatialUnitId', 'Combined']].copy()
