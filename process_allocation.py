@@ -321,7 +321,7 @@ def process_allo(param):
 
     ## Filter for active consents
     active_bool = rv6.ConsentStatus.isin(['Issued - Active', 'Issued - Inactive', 'Issued - s124 Continuance'])
-    in_process_bool = rv6.ConsentStatus.isin(['Application in Process']) & rv6.ApplicationStatus.isin(['New Consent'])
+    in_process_bool = rv6.ConsentStatus.isin(['Application in Process', 'Application Waiting s88', 'Applicant Reviewing', 'Application on Hold', 'Obj or Appeal in Process', 'Application In Process']) & rv6.ApplicationStatus.isin(['New Consent'])
 
     # GW
     gw1 = rv6[gw_bool & active_bool].copy()
