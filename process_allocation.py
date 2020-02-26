@@ -259,39 +259,49 @@ def process_allo(param):
 
     vols2 = vols1.set_index(['RecordNumber', 'GwAllocationBlock', 'Wap'])[['Groundwater', 'Surface Water']].stack().reset_index()
     vols2.rename(columns={'level_3': 'HydroGroup', 0: 'AllocatedAnnualVolume'}, inplace=True)
-#    vols2.rename(columns={'GwAllocationBlock': 'AllocationBlock'}, inplace=True)
-#    vols3 = vols2.drop_duplicates(['RecordNumber', 'HydroGroup', 'GwAllocationBlock', 'Wap']).set_index(['RecordNumber', 'HydroGroup', 'GwAllocationBlock', 'Wap'])
     vols3 = vols2.drop_duplicates(['RecordNumber', 'HydroGroup', 'GwAllocationBlock', 'Wap'])
 
     # Join rates and volumes
     rv1 = pd.merge(rates3, vols3, on=['RecordNumber', 'HydroGroup', 'Wap'])
-    rv1['AllocationBlock'] = rv1['SwAllocationBlock']
-    rv1.loc[rv1.HydroGroup == 'Groundwater', 'AllocationBlock'] = rv1.loc[rv1.HydroGroup == 'Groundwater', 'GwAllocationBlock']
-    rv1.drop(['SwAllocationBlock', 'GwAllocationBlock'], axis=1, inplace=True)
 
     # Fix duplicates
-    rv1['Count'] = rv1.groupby(['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap'])['AllocatedRate'].transform('count')
+    rv1['Count'] = rv1.groupby(['RecordNumber', 'HydroGroup', 'SwAllocationBlock', 'Wap'])['AllocatedRate'].transform('count')
     rv1['AllocatedRate'] = rv1['AllocatedRate'] / rv1['Count']
-#    rv1['AllocatedAnnualVolume'] = rv1['AllocatedAnnualVolume'] / rv1['Count']
 
-    rv1 = rv1.groupby(['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap']).sum().reset_index()
+    rv_grp = rv1.groupby(['RecordNumber', 'HydroGroup', 'GwAllocationBlock', 'Wap'])
+    rv1['Count'] = rv_grp['AllocatedRate'].transform('count')
+    rv1['AllocatedAnnualVolume'] = rv1['AllocatedAnnualVolume'] / rv1['Count']
+
+    # Distribute volumes according to rates
+    rv1['rate_ratio'] = rv1['AllocatedRate'] / rv_grp['AllocatedRate'].transform('sum')
+    rv1.loc[rv1['rate_ratio'].isnull(), 'rate_ratio'] = 0
+    rv1.loc[rv1['rate_ratio'] == np.inf, 'rate_ratio'] = 1
+    rv1['vol_sum'] = rv_grp['AllocatedAnnualVolume'].transform('sum')
+    rv1['AllocatedAnnualVolume'] = rv1['vol_sum'] * rv1['rate_ratio']
+
+    # Specify the Allocation blocks and aggregate
+    rv1['AllocationBlock'] = rv1['SwAllocationBlock']
+    rv1.loc[rv1.HydroGroup == 'Groundwater', 'AllocationBlock'] = rv1.loc[rv1.HydroGroup == 'Groundwater', 'GwAllocationBlock']
+    rv1.drop(['SwAllocationBlock', 'GwAllocationBlock', 'Count', 'rate_ratio', 'vol_sum'], axis=1, inplace=True)
+
+    rv1a = rv1.groupby(['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap']).sum().reset_index()
 
     ## Deal with the "Include in Allocation" fields
-    rv1a = pd.merge(rv1.drop('Count', axis=1), allo_rates1.reset_index()[['RecordNumber', 'Wap', 'FromMonth', 'ToMonth', 'IncludeInSwAllocation']].drop_duplicates(['RecordNumber', 'Wap']), on=['RecordNumber', 'Wap'])
-    rv2 = pd.merge(rv1a, vols1[['RecordNumber', 'Wap', 'IncludeInGwAllocation']].drop_duplicates(['RecordNumber', 'Wap']), on=['RecordNumber', 'Wap'])
+    rv1b = pd.merge(rv1a, allo_rates1.reset_index()[['RecordNumber', 'Wap', 'FromMonth', 'ToMonth', 'IncludeInSwAllocation']].drop_duplicates(['RecordNumber', 'Wap']), on=['RecordNumber', 'Wap'])
+    rv2 = pd.merge(rv1b, vols1[['RecordNumber', 'Wap', 'IncludeInGwAllocation']].drop_duplicates(['RecordNumber', 'Wap']), on=['RecordNumber', 'Wap'])
     rv3 = rv2[(rv2.HydroGroup == 'Surface Water') | (rv2.IncludeInGwAllocation)].drop('IncludeInGwAllocation', axis=1)
     rv4 = rv3[(rv3.HydroGroup == 'Groundwater') | (rv3.IncludeInSwAllocation)].drop('IncludeInSwAllocation', axis=1)
 
     ## Calculate missing volumes and rates
-    ann_bool = rv4.AllocatedAnnualVolume.isnull()
-    rv4.loc[ann_bool, 'AllocatedAnnualVolume'] = (rv4.loc[ann_bool, 'AllocatedRate'] * 0.001*60*60*24*30.42* (rv4.loc[ann_bool, 'ToMonth'] - rv4.loc[ann_bool, 'FromMonth'] + 1)).round()
-
-    rate_bool = rv4.AllocatedRate.isnull()
-    rv4.loc[rate_bool, 'AllocatedRate'] = np.floor((rv4.loc[rate_bool, 'AllocatedAnnualVolume'] / 60/60/24/30.42/ (rv4.loc[rate_bool, 'ToMonth'] - rv4.loc[rate_bool, 'FromMonth'] + 1) * 1000))
+#    ann_bool = rv4.AllocatedAnnualVolume.isnull()
+#    rv4.loc[ann_bool, 'AllocatedAnnualVolume'] = (rv4.loc[ann_bool, 'AllocatedRate'] * 0.001*60*60*24*30.42* (rv4.loc[ann_bool, 'ToMonth'] - rv4.loc[ann_bool, 'FromMonth'] + 1)).round()
+#
+#    rate_bool = rv4.AllocatedRate.isnull()
+#    rv4.loc[rate_bool, 'AllocatedRate'] = np.floor((rv4.loc[rate_bool, 'AllocatedAnnualVolume'] / 60/60/24/30.42/ (rv4.loc[rate_bool, 'ToMonth'] - rv4.loc[rate_bool, 'FromMonth'] + 1) * 1000))
 
     rv4 = rv4[(rv4['AllocatedAnnualVolume'] > 0) | (rv4['AllocatedRate'] > 0)].copy()
-    rv4.loc[rv4['AllocatedAnnualVolume'].isnull(), 'AllocatedAnnualVolume'] = 0
-    rv4.loc[rv4['AllocatedRate'].isnull(), 'AllocatedRate'] = 0
+#    rv4.loc[rv4['AllocatedAnnualVolume'].isnull(), 'AllocatedAnnualVolume'] = 0
+#    rv4.loc[rv4['AllocatedRate'].isnull(), 'AllocatedRate'] = 0
 
     ## Aggregate by crc, allo block, hydrogroup, and wap
 #    rv_grp = rv4.groupby(['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap'])
