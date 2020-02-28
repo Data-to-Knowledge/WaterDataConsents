@@ -236,7 +236,7 @@ def process_allo(param):
     vols1 = pd.merge(av1, ar3, on=['RecordNumber', 'TakeType'])
 #    vols1.groupby(['RecordNumber', 'TakeType', 'Wap'])['GwAllocationBlock'].count()
 
-    grp3 = vols1.groupby(['RecordNumber', 'TakeType'])
+    grp3 = vols1.groupby(['RecordNumber', 'TakeType', 'GwAllocationBlock'])
     vols1['Rate150DayAgg'] = grp3['Rate150Day'].transform('sum')
     vols1['ratio'] = vols1['Rate150Day'] / vols1['Rate150DayAgg']
     vols1.loc[vols1['ratio'].isnull(), 'ratio'] = 0
