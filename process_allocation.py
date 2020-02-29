@@ -358,7 +358,6 @@ def process_allo(param):
     sw_process1 = rv6[sw_bool & in_process_bool].copy()
 
     index1 = ['SpatialUnitId', 'AllocationBlock', 'FromMonth']
-    #df = sw_active1.copy()
     month_col = 'FromMonth'
     calc_col = 'AllocatedRate'
 
