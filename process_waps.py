@@ -49,7 +49,7 @@ def process_waps(param):
     ### Waps
     print('--Process Waps')
 
-    sites1 = vector.xy_to_gpd('Wap', 'NzTmX', 'NzTmY', db.sites.drop('EffectiveFromDate', axis=1))
+    sites1 = vector.xy_to_gpd('Wap', 'NzTmX', 'NzTmY', db.sites)
 
     waps1 = sites1.merge(db.wap_sd.drop('EffectiveFromDate', axis=1), on='Wap')
     waps1.loc[waps1['SD1_7Day'].isnull(), 'SD1_7Day'] = 0
@@ -58,7 +58,7 @@ def process_waps(param):
     waps1[['SD1_7Day', 'SD1_30Day', 'SD1_150Day']] = waps1[['SD1_7Day', 'SD1_30Day', 'SD1_150Day']].round().astype(int)
 
     ## Aquifer tests
-    aq1 = db.wap_aquifer_test.dropna(subset=['Storativity']).drop('EffectiveFromDate', axis=1).copy()
+    aq1 = db.wap_aquifer_test.dropna(subset=['Storativity']).copy()
     aq2 = aq1.groupby('Wap')['Storativity'].mean().dropna().reset_index()
     aq2.Storativity = True
 
