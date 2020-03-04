@@ -126,7 +126,7 @@ TRIM(UPPER("RecordNumber")) AS "RecordNumber"
     WHEN 'Feb' THEN 8
     WHEN 'Mar' THEN 9
     WHEN 'Apr' THEN 10
-    WHEN 'Map' THEN 11
+    WHEN 'May' THEN 11
     WHEN 'Jun' THEN 12
     WHEN 'Jul' THEN 1
     WHEN 'Aug' THEN 2
@@ -141,7 +141,7 @@ end AS "FromMonth"
     WHEN 'Feb' THEN 8
     WHEN 'Mar' THEN 9
     WHEN 'Apr' THEN 10
-    WHEN 'Map' THEN 11
+    WHEN 'May' THEN 11
     WHEN 'Jun' THEN 12
     WHEN 'Jul' THEN 1
     WHEN 'Aug' THEN 2
