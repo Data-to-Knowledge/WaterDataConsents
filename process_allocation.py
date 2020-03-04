@@ -188,7 +188,10 @@ def process_allo(param):
     allo_rates1.loc[allo_rates1.sd_cat == 'high', 'sw_vol_ratio'] = 0.75
     allo_rates1.loc[allo_rates1.sd_cat == 'direct', 'sw_vol_ratio'] = 1
 
-    # Assign Rates
+    # Remove SW takes that are flagged as not in allocation
+    allo_rates1 = allo_rates1[allo_rates1['IncludeInSwAllocation'] | (allo_rates1['TakeType'] == 'Take Groundwater')].copy()
+
+    ## Assign Rates
     rates1 = allo_rates1.copy()
 
     gw_bool = rates1['TakeType'] == 'Take Groundwater'
@@ -207,7 +210,7 @@ def process_allo(param):
     rates1.loc[gw_bool, 'Groundwater'] = rates1.loc[gw_bool, 'Rate150Day']
     rates1.loc[mod_bool | high_bool, 'Surface Water'] = rates1.loc[mod_bool | high_bool, 'Rate150Day'] * (rates1.loc[mod_bool | high_bool, 'SD1_150Day'] * 0.01)
 
-    alt_bool = ((rates1.Storativity | lf_cond_bool) & (mod_bool | high_bool)) | rates1.Combined
+    alt_bool = gw_bool & (((rates1.Storativity | lf_cond_bool) & (mod_bool | high_bool)) | rates1.Combined)
     rates1.loc[alt_bool, 'Groundwater'] = rates1.loc[alt_bool, 'Rate150Day']  - rates1.loc[alt_bool, 'Surface Water']
 
     rates1.loc[direct_bool & gw_bool, 'Surface Water'] = rates1.loc[direct_bool & gw_bool, 'RateDaily']
