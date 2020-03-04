@@ -152,14 +152,14 @@ def process_allo(param):
     #    wa7 = pd.merge(av1, wa6, on=['RecordNumber', 'TakeType'])
 
     ## Add in stream depletion
-    waps = db.waps.drop('EffectiveFromDate', axis=1).copy()
+    waps = db.waps.copy()
     wa7 = pd.merge(wa6, waps, on='Wap').drop(['SD1_30Day'], axis=1)
 
     #    wa9['SD1_7Day'] = pd.to_numeric(wa9['SD1_7Day'], errors='coerce').round(0)
     #    wa9['SD1_150Day'] = pd.to_numeric(wa9['SD1_150Day'], errors='coerce').round(0)
 
     ## Add in the lowflow bool
-    wa8 = pd.merge(wa7, db.consented_takes.drop('EffectiveFromDate', axis=1), on=['RecordNumber', 'TakeType'], how='left')
+    wa8 = pd.merge(wa7, db.consented_takes, on=['RecordNumber', 'TakeType'], how='left')
     wa8.loc[wa8.LowflowCondition.isnull(), 'LowflowCondition'] = False
 
     ## Distribute the rates according to the stream depletion requirements
@@ -223,7 +223,7 @@ def process_allo(param):
     rates3 = rates2.drop_duplicates(['RecordNumber', 'HydroGroup', 'SwAllocationBlock', 'Wap'])
 
     ## Allocated Volume
-    av1 = db.allocated_volume.drop('EffectiveFromDate', axis=1).copy()
+    av1 = db.allocated_volume.copy()
     av1.replace({'GwAllocationBlock': {'In Waitaki': 'A'}}, inplace=True)
 
     # Add in the Wap info
