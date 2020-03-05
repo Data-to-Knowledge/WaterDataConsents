@@ -18,8 +18,8 @@ env:
   global:
     CACHE_IMAGE: dtok/water-data-allocation:$TRAVIS_BRANCH
 
-before_script:
-  - docker pull $CACHE_IMAGE || true
+# before_script:
+#   - docker pull $CACHE_IMAGE || true
 
 script:
   - docker build --cache-from $CACHE_IMAGE --tag $CACHE_IMAGE .
