@@ -8,12 +8,12 @@ services:
         environment:
              configuration: |
                  schedule:
-                     - every: 30 minutes
+                     - cron: 0 10 * * * *
                        task: consent-process
                  tasks:
                      docker:
                          - name: consent-process
-                           image: dtok/water-data-consents:dev
+                           image: dtok/water-data-allocation:dev
                            always-pull: true
                            volumes:
                                - /media/waterdata1/git/WaterDataConsents/parameters-dev.yml:/parameters.yml
