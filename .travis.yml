@@ -1,11 +1,29 @@
-dist: trusty
+# dist: bionic
+#
+# jobs:
+#   include:
+#     - stage: build docker image
+#       script:
+#         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+#         - docker build --cache-from dtok/water-data-allocation:$TRAVIS_BRANCH -t dtok/water-data-allocation:$TRAVIS_BRANCH .
+#         - docker images
+#         - docker push dtok/water-data-allocation:$TRAVIS_BRANCH
 
-jobs:
-  include:
-    - stage: build docker image
-      script:
-        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-        - docker pull dtok/water-data-allocation:$TRAVIS_BRANCH
-        - docker build -t dtok/water-data-allocation:$TRAVIS_BRANCH .
-        - docker images
-        - docker push dtok/water-data-allocation:$TRAVIS_BRANCH
+sudo: required
+
+services:
+  - docker
+
+env:
+  global:
+    CACHE_IMAGE: dtok/water-data-allocation:$TRAVIS_BRANCH
+
+before_script:
+  - docker pull $CACHE_IMAGE || true
+
+script:
+  - docker build --cache-from $CACHE_IMAGE --tag $CACHE_IMAGE .
+
+after_success:
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - docker push $CACHE_IMAGE
