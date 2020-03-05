@@ -152,14 +152,14 @@ def process_allo(param):
     #    wa7 = pd.merge(av1, wa6, on=['RecordNumber', 'TakeType'])
 
     ## Add in stream depletion
-    waps = db.waps.drop('EffectiveFromDate', axis=1).copy()
+    waps = db.waps.copy()
     wa7 = pd.merge(wa6, waps, on='Wap').drop(['SD1_30Day'], axis=1)
 
     #    wa9['SD1_7Day'] = pd.to_numeric(wa9['SD1_7Day'], errors='coerce').round(0)
     #    wa9['SD1_150Day'] = pd.to_numeric(wa9['SD1_150Day'], errors='coerce').round(0)
 
     ## Add in the lowflow bool
-    wa8 = pd.merge(wa7, db.consented_takes.drop('EffectiveFromDate', axis=1), on=['RecordNumber', 'TakeType'], how='left')
+    wa8 = pd.merge(wa7, db.consented_takes, on=['RecordNumber', 'TakeType'], how='left')
     wa8.loc[wa8.LowflowCondition.isnull(), 'LowflowCondition'] = False
 
     ## Distribute the rates according to the stream depletion requirements
@@ -188,7 +188,10 @@ def process_allo(param):
     allo_rates1.loc[allo_rates1.sd_cat == 'high', 'sw_vol_ratio'] = 0.75
     allo_rates1.loc[allo_rates1.sd_cat == 'direct', 'sw_vol_ratio'] = 1
 
-    # Assign Rates
+    # Remove SW takes that are flagged as not in allocation
+    allo_rates1 = allo_rates1[allo_rates1['IncludeInSwAllocation'] | (allo_rates1['TakeType'] == 'Take Groundwater')].copy()
+
+    ## Assign Rates
     rates1 = allo_rates1.copy()
 
     gw_bool = rates1['TakeType'] == 'Take Groundwater'
@@ -207,7 +210,7 @@ def process_allo(param):
     rates1.loc[gw_bool, 'Groundwater'] = rates1.loc[gw_bool, 'Rate150Day']
     rates1.loc[mod_bool | high_bool, 'Surface Water'] = rates1.loc[mod_bool | high_bool, 'Rate150Day'] * (rates1.loc[mod_bool | high_bool, 'SD1_150Day'] * 0.01)
 
-    alt_bool = ((rates1.Storativity | lf_cond_bool) & (mod_bool | high_bool)) | rates1.Combined
+    alt_bool = gw_bool & (((rates1.Storativity | lf_cond_bool) & (mod_bool | high_bool)) | rates1.Combined)
     rates1.loc[alt_bool, 'Groundwater'] = rates1.loc[alt_bool, 'Rate150Day']  - rates1.loc[alt_bool, 'Surface Water']
 
     rates1.loc[direct_bool & gw_bool, 'Surface Water'] = rates1.loc[direct_bool & gw_bool, 'RateDaily']
@@ -223,7 +226,7 @@ def process_allo(param):
     rates3 = rates2.drop_duplicates(['RecordNumber', 'HydroGroup', 'SwAllocationBlock', 'Wap'])
 
     ## Allocated Volume
-    av1 = db.allocated_volume.drop('EffectiveFromDate', axis=1).copy()
+    av1 = db.allocated_volume.copy()
     av1.replace({'GwAllocationBlock': {'In Waitaki': 'A'}}, inplace=True)
 
     # Add in the Wap info
@@ -337,37 +340,6 @@ def process_allo(param):
     rv6.loc[gw_bool, 'SpatialUnitId'] = rv6.loc[gw_bool, 'GwSpatialUnitId']
     rv6.loc[sw_bool, 'SpatialUnitId'] = rv6.loc[sw_bool, 'SwSpatialUnitId']
 
-    ## Filter for active consents
-    active_bool = rv6.ConsentStatus.isin(['Issued - Active', 'Issued - Inactive', 'Issued - s124 Continuance'])
-    in_process_bool = rv6.ConsentStatus.isin(['Application in Process', 'Application Waiting s88', 'Applicant Reviewing', 'Application on Hold', 'Obj or Appeal in Process', 'Application In Process']) & rv6.ApplicationStatus.isin(['New Consent'])
-
-    # GW
-    gw1 = rv6[gw_bool & active_bool].copy()
-    gw2 = rv6[gw_bool & in_process_bool].copy()
-    zone1 = gw1.groupby(['SpatialUnitId', 'AllocationBlock'])[['AllocatedAnnualVolume']].sum()
-    zone2 = gw2.groupby(['SpatialUnitId', 'AllocationBlock'])[['AllocatedAnnualVolume']].sum()
-
-    zone1.rename(columns={'AllocatedAnnualVolume': 'AllocatedVolume'}, inplace=True)
-    zone2.rename(columns={'AllocatedAnnualVolume': 'NewAllocationInProgress'}, inplace=True)
-
-    zone3 = pd.concat([zone1, zone2], axis=1).reset_index()
-#    zone3.rename(columns={'GwSpatialUnitId': 'SpatialUnitId'}, inplace=True)
-
-    # SW
-    sw_active1 = rv6[sw_bool & active_bool].copy()
-    sw_process1 = rv6[sw_bool & in_process_bool].copy()
-
-    index1 = ['SpatialUnitId', 'AllocationBlock', 'FromMonth']
-    month_col = 'FromMonth'
-    calc_col = 'AllocatedRate'
-
-    sw_active2 = split_months(sw_active1, index1, month_col, calc_col)
-    sw_process2 = split_months(sw_process1, index1, month_col, calc_col)
-    sw_process2.rename(columns={'AllocatedRate': 'NewAllocationInProgress'}, inplace=True)
-
-    sw2 = pd.merge(sw_active2, sw_process2, on=['SpatialUnitId', 'AllocationBlock', 'Month'], how='left')
-#    sw2.rename(columns={'SwSpatialUnitId': 'SpatialUnitId'}, inplace=True)
-
     ## Save results
     print('Save results')
 
@@ -376,18 +348,8 @@ def process_allo(param):
     out_param = param['source data']['allo_calc']
     sf.to_table(rv6, out_param['table'], out_param['username'], out_param['password'], out_param['account'], out_param['database'], out_param['schema'], True)
 
-    # GW summary
-    zone3['EffectiveFromDate'] = run_time_start
-    out_param = param['source data']['gw_zone_allo']
-    sf.to_table(zone3, out_param['table'], out_param['username'], out_param['password'], out_param['account'], out_param['database'], out_param['schema'], True)
-
-    # SW summary
-    sw2['EffectiveFromDate'] = run_time_start
-    out_param = param['source data']['sw_zone_allo']
-    sf.to_table(sw2, out_param['table'], out_param['username'], out_param['password'], out_param['account'], out_param['database'], out_param['schema'], True)
-
     ## Return
-    return rv6, zone3, sw2
+    return rv6
 
 
 

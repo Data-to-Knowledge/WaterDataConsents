@@ -8,6 +8,6 @@ COPY requirements.txt ./
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY utils.py process_limits.py process_allocation.py process_waps.py main.py ./
+COPY utils.py process_limits.py process_allocation.py process_waps.py aggregate_allocation.py main.py ./
 
 CMD ["python", "main.py", "parameters.yml"]

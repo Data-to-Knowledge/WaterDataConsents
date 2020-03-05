@@ -12,6 +12,7 @@ import yaml
 from process_waps import process_waps
 from process_allocation import process_allo
 from process_limits import process_limits
+from aggregate_allocation import agg_allo
 
 #########################################
 ### Get todays date-time
@@ -49,11 +50,12 @@ print('---Process the Waps')
 waps = process_waps(param)
 
 print('---Process the Allocation')
-allo1, gw_zones, sw_zones = process_allo(param)
+allo1 = process_allo(param)
 
 print('---Process the Limits')
-summ1 = process_limits(param)
+gw_combo1, sw_combo2 = process_limits(param)
 
-
+print('---Aggregate the Allocation')
+agg1 = agg_allo(param, sw_combo2)
 
 
