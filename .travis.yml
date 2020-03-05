@@ -1,10 +1,10 @@
-language: python
+dist: trusty
 
-services:
-  - docker
-
-script:
-  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-  - docker build -t dtok/water-data-allocation:$TRAVIS_BRANCH .
-  - docker images
-  - docker push dtok/water-data-allocation:$TRAVIS_BRANCH
+jobs:
+  include:
+    - stage: build docker image
+      script:
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        - docker build -t dtok/water-data-allocation:$TRAVIS_BRANCH .
+        - docker images
+        - docker push dtok/water-data-allocation:$TRAVIS_BRANCH
