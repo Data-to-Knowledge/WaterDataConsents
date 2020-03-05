@@ -254,19 +254,33 @@ def process_allo(param):
     vols1['Surface Water'] = vols1['FullAnnualVolume'] * vols1['sw_vol_ratio']
     vols1['Groundwater'] = vols1['FullAnnualVolume']
     vols1.loc[vols1.TakeType == 'Take Surface Water', 'Groundwater'] = 0
-    vols1.loc[(vols1.TakeType == 'Take Surface Water') & (vols1['Surface Water'] == 0), 'Surface Water'] = np.nan
+#    vols1.loc[(vols1.TakeType == 'Take Surface Water') & (vols1['Surface Water'] == 0), 'Surface Water'] = np.nan
 
 #    discount_bool = ((vols1.sd_cat == 'moderate') & (vols1.Storativity)) | ((vols1.sd_cat == 'moderate') & vols1.Combined) | (vols1.sd_cat == 'high') | (vols1.sd_cat == 'direct')
     discount_bool = ((vols1.Storativity | vols1.LowflowCondition) & ((vols1.sd_cat == 'moderate') | (vols1.sd_cat == 'high') | (vols1.sd_cat == 'direct'))) | vols1.Combined
 
     vols1.loc[discount_bool, 'Groundwater'] = vols1.loc[discount_bool, 'FullAnnualVolume'] - vols1.loc[discount_bool, 'Surface Water']
 
-    vols2 = vols1.set_index(['RecordNumber', 'GwAllocationBlock', 'Wap'])[['Groundwater', 'Surface Water']].stack().reset_index()
-    vols2.rename(columns={'level_3': 'HydroGroup', 0: 'AllocatedAnnualVolume'}, inplace=True)
-    vols3 = vols2.drop_duplicates(['RecordNumber', 'HydroGroup', 'GwAllocationBlock', 'Wap'])
+    # Split the take types by SW and GW to assign the appropraite allocation block type
+    sw_vols1 = vols1[vols1.TakeType == 'Take Surface Water'].copy()
+    gw_vols1 = vols1[vols1.TakeType == 'Take Groundwater'].copy()
 
-    # Join rates and volumes
-    rv1 = pd.merge(rates3, vols3, on=['RecordNumber', 'HydroGroup', 'Wap'])
+    sw_vols1.rename(columns={'GwAllocationBlock': 'SwAllocationBlock'}, inplace=True)
+
+    gw_vols2 = gw_vols1.set_index(['RecordNumber', 'GwAllocationBlock', 'Wap'])[['Groundwater', 'Surface Water']].stack().reset_index()
+    gw_vols2.rename(columns={'level_3': 'HydroGroup', 0: 'AllocatedAnnualVolume'}, inplace=True)
+    gw_vols3 = gw_vols2.drop_duplicates(['RecordNumber', 'HydroGroup', 'GwAllocationBlock', 'Wap'])
+
+    sw_vols2 = sw_vols1.set_index(['RecordNumber', 'SwAllocationBlock', 'Wap'])[['Groundwater', 'Surface Water']].stack().reset_index()
+    sw_vols2.rename(columns={'level_3': 'HydroGroup', 0: 'AllocatedAnnualVolume'}, inplace=True)
+    sw_vols3 = sw_vols2.drop_duplicates(['RecordNumber', 'HydroGroup', 'SwAllocationBlock', 'Wap'])
+
+    ## Join SW rates to SW volumes
+    rv0 = pd.merge(rates3, sw_vols3, on=['RecordNumber', 'SwAllocationBlock', 'HydroGroup', 'Wap'])
+    rv0.rename(columns={'SwAllocationBlock': 'AllocationBlock'}, inplace=True)
+
+    ## Join GW rates and GW volumes
+    rv1 = pd.merge(rates3, gw_vols3, on=['RecordNumber', 'HydroGroup', 'Wap'])
 
     # Fix duplicates
     rv1['Count'] = rv1.groupby(['RecordNumber', 'HydroGroup', 'SwAllocationBlock', 'Wap'])['AllocatedRate'].transform('count')
@@ -294,12 +308,15 @@ def process_allo(param):
     rv1_max = rv1_grp[['ToMonth']].max()
     rv1a = pd.concat([rv1_sum, rv1_min, rv1_max], axis=1).reset_index()
 
+    ## Combine the SW and GW data frames
+    rv2 = pd.concat([rv0, rv1a])
+
     ## Deal with the "Include in Allocation" fields
     sw_allo_bool = allo_rates1.reset_index()[['RecordNumber', 'Wap', 'IncludeInSwAllocation']].drop_duplicates(['RecordNumber', 'Wap'])
     gw_allo_bool = vols1[['RecordNumber', 'Wap', 'IncludeInGwAllocation']].drop_duplicates(['RecordNumber', 'Wap'])
 
-    rv1b = pd.merge(rv1a, sw_allo_bool, on=['RecordNumber', 'Wap'])
-    rv2 = pd.merge(rv1b, gw_allo_bool, on=['RecordNumber', 'Wap'])
+    rv2a = pd.merge(rv2, sw_allo_bool, on=['RecordNumber', 'Wap'])
+    rv2 = pd.merge(rv2a, gw_allo_bool, on=['RecordNumber', 'Wap'])
     rv3 = rv2[(rv2.HydroGroup == 'Surface Water') | (rv2.IncludeInGwAllocation)].drop('IncludeInGwAllocation', axis=1)
     rv4 = rv3[(rv3.HydroGroup == 'Groundwater') | (rv3.IncludeInSwAllocation)].drop('IncludeInSwAllocation', axis=1)
 
