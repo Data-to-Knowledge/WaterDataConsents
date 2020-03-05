@@ -254,7 +254,7 @@ def process_allo(param):
     vols1['Surface Water'] = vols1['FullAnnualVolume'] * vols1['sw_vol_ratio']
     vols1['Groundwater'] = vols1['FullAnnualVolume']
     vols1.loc[vols1.TakeType == 'Take Surface Water', 'Groundwater'] = 0
-    vols1.loc[(vols1.TakeType == 'Take Surface Water') & (vols1['Surface Water'] == 0), 'Surface Water'] = np.nan
+#    vols1.loc[(vols1.TakeType == 'Take Surface Water') & (vols1['Surface Water'] == 0), 'Surface Water'] = np.nan
 
 #    discount_bool = ((vols1.sd_cat == 'moderate') & (vols1.Storativity)) | ((vols1.sd_cat == 'moderate') & vols1.Combined) | (vols1.sd_cat == 'high') | (vols1.sd_cat == 'direct')
     discount_bool = ((vols1.Storativity | vols1.LowflowCondition) & ((vols1.sd_cat == 'moderate') | (vols1.sd_cat == 'high') | (vols1.sd_cat == 'direct'))) | vols1.Combined
