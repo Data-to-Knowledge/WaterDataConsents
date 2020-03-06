@@ -103,6 +103,32 @@ def geojson_convert(json_lst):
     return gjson2, hydro_units, pd.DataFrame(gpd2.drop('geometry', axis=1)).reset_index(), sg_df
 
 
+def extract_spatial_units(json_lst):
+    """
+
+    """
+    hydro_units = {'Groundwater': {'value': [], 'label': []}, 'Surface Water': {'value': [], 'label': []}}
+    sg = []
+
+    for j in json_lst.copy():
+        if isinstance(j['spatialUnit'], list):
+            for g in j['spatialUnit']:
+                for h in j['hydroUnit']:
+                    sg.append([j['id'], g['id'], h])
+                    hydro_units[h]['value'].extend([g['id']])
+                    hydro_units[h]['label'].extend([g['name']])
+        if isinstance(j['spatialUnit'], dict):
+            for h in j['hydroUnit']:
+                sg.append([j['id'], g['id'], h])
+                hydro_units[h]['value'].extend([g['id']])
+                hydro_units[h]['label'].extend([g['name']])
+
+    sg_df = pd.DataFrame(sg)
+    sg_df.columns = ['id', 'spatialId', 'HydroGroup']
+
+    return hydro_units, sg_df
+
+
 def process_limit_data(json_lst):
     """
 
