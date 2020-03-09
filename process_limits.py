@@ -22,7 +22,7 @@ def process_limits(param):
     ### Read in source data and update accela tables in ConsentsReporting db
     print('--Reading in source data...')
 
-    json_lst = get_json_from_api()
+    json_lst = get_json_from_api(param['misc']['PlanLimits']['api_url'], param['misc']['PlanLimits']['api_headers'])
     json_lst1 = json_filters(json_lst, only_operative=True)
     hydro_units, sg1 = extract_spatial_units(json_lst1)
     l_data1, t_data1, units = process_limit_data(json_lst1)
