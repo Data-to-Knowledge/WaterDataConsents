@@ -28,12 +28,11 @@ FROM "WATERDATAREPO"."acla"."vAct_Water_TakeWaterPermitAuthorisation"
 CREATE OR REPLACE VIEW "Consents_PermitUse_Source" AS
 SELECT
 TRIM(UPPER("RecordNumber")) AS "RecordNumber"
-, IFF(SUBSTRING("Activity",4,1) = ' ',INITCAP(TRIM("Activity")),'blah') AS "UseType" -- Need some clarification here
-,"Activity" AS "take_type" -- Need some clarifiaction here
+,INITCAP(TRIM("Activity")) AS "Activity" -- Need some clarification here
+,TRIM("Water Use") AS "UseType" -- Need some clarifiaction here
 ,IFF(ROUND("Consecutive Day Period"::Decimal(18,2),3) <= 0,NULL,ROUND("Consecutive Day Period"::Decimal(18,2),3)) AS "ConsentedMultiDayVolume"
 ,IFF(ROUND("Volume (m3)"::Decimal(18,2),3) <= 0,NULL,ROUND("Volume (m3)"::Decimal(18,2),3)) AS "ConsentedMultiDayPeriod"
 ,IFF(ROUND("Max Rate (l/s)"::Decimal(18,2),3) <= 0,NULL,ROUND("Max Rate (l/s)"::Decimal(18,2),3)) AS "ConsentedRate"
-,'Some Mappings Need to go here' AS "MappingsHere"
 FROM "WATERDATAREPO"."acla"."vAct_Water_TakeWaterPermitUse"
 
 CREATE OR REPLACE VIEW "Consents_PermitVolume_Source" AS

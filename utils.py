@@ -22,15 +22,11 @@ today1 = pd.Timestamp.today()
 
 month_map = {1: 'Jul', 2: 'Aug', 3: 'Sep', 4: 'Oct', 5: 'Nov', 6: 'Dec', 7: 'Jan', 8: 'Feb', 9: 'Mar', 10: 'Apr', 11: 'May', 12: 'Jun'}
 
-api_url = 'https://waterdata-dev-apis.azure-api.net/planlimits/v1/ManagementGroup/List'
-api_headers = {'Ocp-Apim-Subscription-Key': '2b672c6e34eb4829ad80b55377c0dfda'}
-
 ##########################################
 ### Functions
 
 
-
-def get_json_from_api():
+def get_json_from_api(api_url, api_headers):
     """
 
     """
@@ -101,6 +97,32 @@ def geojson_convert(json_lst):
     gjson2 = gpd2.__geo_interface__
 
     return gjson2, hydro_units, pd.DataFrame(gpd2.drop('geometry', axis=1)).reset_index(), sg_df
+
+
+def extract_spatial_units(json_lst):
+    """
+
+    """
+    hydro_units = {'Groundwater': {'value': [], 'label': []}, 'Surface Water': {'value': [], 'label': []}}
+    sg = []
+
+    for j in json_lst.copy():
+        if isinstance(j['spatialUnit'], list):
+            for g in j['spatialUnit']:
+                for h in j['hydroUnit']:
+                    sg.append([j['id'], g['id'], h])
+                    hydro_units[h]['value'].extend([g['id']])
+                    hydro_units[h]['label'].extend([g['name']])
+        if isinstance(j['spatialUnit'], dict):
+            for h in j['hydroUnit']:
+                sg.append([j['id'], g['id'], h])
+                hydro_units[h]['value'].extend([g['id']])
+                hydro_units[h]['label'].extend([g['name']])
+
+    sg_df = pd.DataFrame(sg)
+    sg_df.columns = ['id', 'spatialId', 'HydroGroup']
+
+    return hydro_units, sg_df
 
 
 def process_limit_data(json_lst):
