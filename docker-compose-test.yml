@@ -1,7 +1,7 @@
 version: "2"
 
 services:
-    tasker:
+    tasker_test:
         image: strm/tasker
         volumes:
             - "/var/run/docker.sock:/var/run/docker.sock"
@@ -12,7 +12,7 @@ services:
                        task: consent-process-test
                  tasks:
                      docker:
-                         - name: consent-process
+                         - name: consent-process-test
                            image: dtok/water-data-allocation:test
                            always-pull: true
                            volumes:
