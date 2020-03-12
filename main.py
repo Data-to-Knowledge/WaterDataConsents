@@ -53,9 +53,9 @@ print('---Process the Allocation')
 allo1 = process_allo(param)
 
 print('---Process the Limits')
-gw_combo1, sw_combo2 = process_limits(param)
+gw_combo1, sw_limits = process_limits(param)
 
 print('---Aggregate the Allocation')
-agg1 = agg_allo(param, sw_combo2)
+agg1 = agg_allo(param, sw_limits)
 
 
