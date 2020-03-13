@@ -15,6 +15,8 @@ CREATE or replace TABLE "ConsentedAllocation" (
 	"ToMonth" INTEGER,
 	"AllocatedRate" INTEGER,
 	"AllocatedAnnualVolume" INTEGER,
+	"IncludeInGwAllocation" boolean,
+	"IncludeInSwAllocation" boolean,
     "EffectiveFromDate" TIMESTAMP(0),
   CONSTRAINT pkCA PRIMARY KEY ("RecordNumber", "HydroGroup", "AllocationBlock", "Wap")
 )
