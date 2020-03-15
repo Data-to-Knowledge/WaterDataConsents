@@ -1,7 +1,7 @@
 version: "2"
 
 services:
-    tasker:
+    tasker_test:
         image: strm/tasker
         volumes:
             - "/var/run/docker.sock:/var/run/docker.sock"
@@ -12,10 +12,10 @@ services:
                        task: consent-process-test
                  tasks:
                      docker:
-                         - name: consent-process
+                         - name: consent-process-test
                            image: dtok/water-data-allocation:test
                            always-pull: true
                            volumes:
-                               - /media/waterdata1/git/WaterDataConsents/parameters-test.yml:/parameters.yml
+                               - /home/mike/git/WaterDataConsents/parameters-test.yml:/parameters.yml
                            script:
                                - python main.py parameters.yml

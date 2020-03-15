@@ -221,15 +221,29 @@ def assign_notes(sg_df):
     return sp4.drop(['hydro_count', 'joint_units'], axis=1)
 
 
-def split_months(df, index, month_col, calc_col):
+def split_months(df, index, calc_col):
     """
 
     """
     index1 = index.copy()
-    if not month_col in index1:
-        index1.extend([month_col])
+    if not 'Month' in index1:
+        index1.extend(['Month'])
 
-    sum1 = df.groupby(index1)[calc_col].sum()
+#    sum1 = df.groupby(index1)[calc_col].sum()
+    grp1 = df.groupby(['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap'])
+
+    lst1 = []
+    for index, g in grp1:
+#        print(index)
+        mons = range(g.FromMonth.min(), g.ToMonth.max() + 1)
+        val = g[calc_col].max()
+        index_list = list(index)
+        temp1 = [(index_list[0], index_list[1], index_list[2], index_list[3], m, val) for m in mons]
+        lst1.extend(temp1)
+    df1 = pd.DataFrame.from_records(lst1, columns=['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap', 'Month', calc_col])
+    df2 = pd.merge(df1, df[['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap', 'SpatialUnitId']], on=['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap'])
+
+    sum1 = df2.groupby(['SpatialUnitId', 'AllocationBlock', 'Month'])[calc_col].sum()
 
     ldata0 = sum1.unstack(len(index1) - 1)
     col1 = set(ldata0.columns)
@@ -242,7 +256,6 @@ def split_months(df, index, month_col, calc_col):
     l_data1 = ldata0.ffill(axis=1).stack()
     l_data1.name = calc_col
     l_data1 = l_data1.reset_index()
-    l_data1.rename(columns={month_col: 'Month'}, inplace=True)
 
     return l_data1
 

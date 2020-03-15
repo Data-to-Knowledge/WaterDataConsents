@@ -317,8 +317,8 @@ def process_allo(param):
 
     rv2a = pd.merge(rv2, sw_allo_bool, on=['RecordNumber', 'Wap'])
     rv2 = pd.merge(rv2a, gw_allo_bool, on=['RecordNumber', 'Wap'])
-    rv3 = rv2[(rv2.HydroGroup == 'Surface Water') | (rv2.IncludeInGwAllocation)].drop('IncludeInGwAllocation', axis=1)
-    rv4 = rv3[(rv3.HydroGroup == 'Groundwater') | (rv3.IncludeInSwAllocation)].drop('IncludeInSwAllocation', axis=1)
+    rv3 = rv2[(rv2.HydroGroup == 'Surface Water') | (rv2.IncludeInGwAllocation)]
+    rv4 = rv3[(rv3.HydroGroup == 'Groundwater') | (rv3.IncludeInSwAllocation)]
 
     ## Calculate missing volumes and rates
 #    ann_bool = rv4.AllocatedAnnualVolume.isnull()

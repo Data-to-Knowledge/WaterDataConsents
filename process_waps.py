@@ -33,6 +33,7 @@ def process_waps(param):
 
     for t in param['misc']['WapProcessing']['tables']:
         p = param['source data'][t]
+        print(p['table'])
         stmt = 'select * from "{table}"'.format(table=p['table'])
         setattr(db, t, sf.read_table(p['username'], p['password'], p['account'], p['database'], p['schema'], stmt))
 

@@ -54,15 +54,16 @@ and swl."Month" = swa."Month";
 
 CREATE OR REPLACE VIEW ConsentDetails AS
 SELECT
-"RecordNumber" AS RecordNumber
-, "HydroGroup" as hydrogroup
-, "AllocationBlock" as allocationblock
-, "Wap" as wap
-, "SpatialUnitId" as spatialunitid
-, "ConsentStatus" as consentstatus
-, "FromDate"::date as fromdate
-, "ToDate"::date as todate
-, CASE "FromMonth"
+ca."RecordNumber" AS RecordNumber
+, ca."HydroGroup" as hydrogroup
+, ca."AllocationBlock" as allocationblock
+, ca."Wap" as wap
+, ca."SpatialUnitId" as spatialunitid
+, sn.spatialunitname
+, ca."ConsentStatus" as consentstatus
+, ca."FromDate"::date as fromdate
+, ca."ToDate"::date as todate
+, CASE ca."FromMonth"
     WHEN 7 THEN 'Jan'
     WHEN 8 THEN 'Feb'
     WHEN 9 THEN 'Mar'
@@ -77,7 +78,7 @@ SELECT
     WHEN 6 THEN 'Dec'
     ELSE 'Jul'
 end AS FromMonth
-, CASE "ToMonth"
+, CASE ca."ToMonth"
     WHEN 7 THEN 'Jan'
     WHEN 8 THEN 'Feb'
     WHEN 9 THEN 'Mar'
@@ -92,10 +93,25 @@ end AS FromMonth
     WHEN 6 THEN 'Dec'
     ELSE 'Jun'
 end AS ToMonth
-, "AllocatedRate" as allocatedrate
-, "AllocatedAnnualVolume" as allocatedannualvolume
-, "EffectiveFromDate" as calculatedat
-from "WATERDATAREPO"."Curated"."ConsentedAllocation"
+, ca."AllocatedRate" as allocatedrate
+, ca."AllocatedAnnualVolume" as allocatedannualvolume
+, ca."IncludeInGwAllocation" as includeingwallocation
+, ca."IncludeInSwAllocation" as includeinswallocation
+, p."ECNumber" as ecnumber
+, p."HolderName" as holdername
+, ca."EffectiveFromDate" as calculatedat
+from "WATERDATAREPO"."Curated"."ConsentedAllocation" as ca
+inner join WATERDATAREPO."PUBLIC"."Consents_Permit_Source" as p on ca."RecordNumber" = p."RecordNumber"
+inner join
+  (select
+  swl."SpatialUnitId" as SpatialUnitId,
+  swl."Name" AS spatialunitname
+  from "WATERDATAREPO"."Curated"."SwZoneLimits" as swl
+  union
+  select
+  gwl."SpatialUnitId" as SpatialUnitId,
+  gwl."Name" AS spatialunitname
+  from "WATERDATAREPO"."Curated"."GwZoneLimits" as gwl) AS sn on ca."SpatialUnitId" = sn.SpatialUnitId
 WHERE consentstatus in ('Issued - Active', 'Issued - Inactive', 'Issued - s124 Continuance', 'Application in Process');
 
 CREATE OR REPLACE View "PowerBiConsentsDetails" AS
@@ -119,3 +135,13 @@ from
 (SELECT DISTINCT "SpatialUnitId" , "Name" as "SpatialUnitName"
 FROM WATERDATAREPO."Curated"."GwZoneLimits") as sgw
 inner join WATERDATAREPO."Curated"."ConsentedAllocation" as ca on sgw."SpatialUnitId" = ca."SpatialUnitId";
+
+select
+swl."SpatialUnitId" as SpatialUnitId,
+swl."Name" as name
+from "WATERDATAREPO"."Curated"."SwZoneLimits" as swl
+union
+select
+gwl."SpatialUnitId" as SpatialUnitId,
+gwl."Name" as name,
+from "WATERDATAREPO"."Curated"."GwZoneLimits" as gwl
