@@ -37,12 +37,6 @@ args = parser.parse_args()
 with open(args.yaml_path) as param:
     param = yaml.safe_load(param)
 
-## Integrety checks
-use_types_check = np.in1d(list(param['misc']['use_types_codes'].keys()), param['misc']['use_types_priorities']).all()
-
-if not use_types_check:
-    raise ValueError('use_type_priorities parameter does not encompass all of the use type categories. Please fix the parameters file.')
-
 ########################################
 ### Run the process
 
@@ -53,9 +47,7 @@ print('---Process the Allocation')
 allo1 = process_allo(param)
 
 print('---Process the Limits')
-gw_combo1, sw_combo2 = process_limits(param)
+gw_combo1, sw_limits = process_limits(param)
 
 print('---Aggregate the Allocation')
-agg1 = agg_allo(param, sw_combo2)
-
-
+agg1 = agg_allo(param, sw_limits)

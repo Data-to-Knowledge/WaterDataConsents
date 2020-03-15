@@ -56,12 +56,11 @@ def agg_allo(param, sw_limits):
     sw_active1 = rv6[sw_bool & active_bool].copy()
     sw_process1 = rv6[sw_bool & in_process_bool].copy()
 
-    index1 = ['SpatialUnitId', 'AllocationBlock', 'FromMonth']
-    month_col = 'FromMonth'
+    index1 = ['SpatialUnitId', 'AllocationBlock', 'Month']
     calc_col = 'AllocatedRate'
 
-    sw_active2 = split_months(sw_active1, index1, month_col, calc_col)
-    sw_process2 = split_months(sw_process1, index1, month_col, calc_col)
+    sw_active2 = split_months(sw_active1, index1, calc_col)
+    sw_process2 = split_months(sw_process1, index1, calc_col)
     sw_process2.rename(columns={'AllocatedRate': 'NewAllocationInProgress'}, inplace=True)
 
     sw2 = pd.merge(sw_active2, sw_process2, on=['SpatialUnitId', 'AllocationBlock', 'Month'], how='left')
@@ -79,9 +78,6 @@ def agg_allo(param, sw_limits):
     sw2['EffectiveFromDate'] = run_time_start
     out_param = param['source data']['sw_zone_allo']
     sf.to_table(sw2, out_param['table'], out_param['username'], out_param['password'], out_param['account'], out_param['database'], out_param['schema'], True)
-
-
-
 
 
 
