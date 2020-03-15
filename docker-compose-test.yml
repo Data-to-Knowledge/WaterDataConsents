@@ -16,6 +16,6 @@ services:
                            image: dtok/water-data-allocation:test
                            always-pull: true
                            volumes:
-                               - /media/waterdata1/git/WaterDataConsents/parameters-test.yml:/parameters.yml
+                               - /home/mike/git/WaterDataConsents/parameters-test.yml:/parameters.yml
                            script:
                                - python main.py parameters.yml

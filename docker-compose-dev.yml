@@ -9,13 +9,13 @@ services:
              configuration: |
                  schedule:
                      - cron: 0 10 * * * *
-                       task: consent-process
+                       task: consent-process-dev
                  tasks:
                      docker:
-                         - name: consent-process
+                         - name: consent-process-dev
                            image: dtok/water-data-allocation:dev
                            always-pull: true
                            volumes:
-                               - /media/waterdata1/git/WaterDataConsents/parameters-dev.yml:/parameters.yml
+                               - /home/mike/git/WaterDataConsents/parameters-dev.yml:/parameters.yml
                            script:
                                - python main.py parameters.yml
