@@ -349,8 +349,11 @@ def process_allo(param):
     waps1 = waps[['Wap', 'GwSpatialUnitId', 'SwSpatialUnitId', 'Combined']].copy()
     rv6 = pd.merge(rv5, waps1, on='Wap')
 
-    gw_bool = (rv6.HydroGroup == 'Groundwater') | (rv6.Combined)
-    sw_bool = (rv6.HydroGroup == 'Surface Water') & (~rv6.Combined)
+#    gw_bool = (rv6.HydroGroup == 'Groundwater') | (rv6.Combined)
+#    sw_bool = (rv6.HydroGroup == 'Surface Water') & (~rv6.Combined)
+
+    gw_bool = (rv6.HydroGroup == 'Groundwater')
+    sw_bool = (rv6.HydroGroup == 'Surface Water')
 
     rv6['SpatialUnitId'] = None
 
