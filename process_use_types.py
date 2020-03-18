@@ -24,44 +24,53 @@ def process_use_types(param):
     """
 
     """
+    run_time_start = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
+    print(run_time_start)
+
+    print('--Reading in source data...')
     db = types.SimpleNamespace()
 
     for t in param['misc']['UseProcessing']['tables']:
         p = param['source data'][t]
         print(p['table'])
-        if p['schema'] != 'public':
-            stmt = 'select * from "{schema}"."{table}"'.format(schema=p['schema'], table=p['table'])
+        if 'account' in p:
+            if p['schema'] != 'public':
+                stmt = 'select {cols} from "{schema}"."{table}"'.format(schema=p['schema'], table=p['table'], cols=json.dumps(p['col_names'])[1:-1])
+            else:
+                stmt = 'select {cols} from "{table}"'.format(table=p['table'], cols=json.dumps(p['col_names'])[1:-1])
+            setattr(db, t, sf.read_table(p['username'], p['password'], p['account'], p['database'], p['schema'], stmt))
         else:
-            stmt = 'select * from "{table}"'.format(table=p['table'])
-        setattr(db, t, sf.read_table(p['username'], p['password'], p['account'], p['database'], p['schema'], stmt))
+            setattr(db, t, mssql.rd_sql(p['server'], p['database'], p['schema'] +'.'+ p['table'], p['col_names'], username=p['username'], password=p['password']))
 
-    ## Split into WAPs by take type equivelant
-    wu3 = wu2.copy()
-    wu3['take_type'] = wu3['UseType'].str.replace('Use', 'Take')
-    wu4 = pd.merge(wu3, mon_min_max1, on=['RecordNumber', 'take_type'])
-    wu4['ConsentedMultiDayVolume'] = wu4['ConsentedMultiDayVolume'].divide(wu4['wap_count'], 0).round()
-    wu4['ConsentedRate'] = wu4['ConsentedRate'].divide(wu4['wap_count'], 0).round(2)
-    wu4.drop(['wap_count', 'take_type'], axis=1, inplace=True)
+    ## Clean up data
+    permit_use1 = db.accela_use.copy()
+    permit_use1['RecordNumber'] = permit_use1['RecordNumber'].str.upper().str.strip()
+    permit_use1['Activity'] = permit_use1['Activity'].str.title().str.strip()
+    permit_use1['Water Use'] = permit_use1['Water Use'].str.strip()
+    permit_use2 = permit_use1.drop_duplicates().copy()
+#    permit_use2 = permit_use1.drop_duplicates(['RecordNumber']).drop('Activity', axis=1).copy()
 
-    ## Convert Use types to broader categories
-    types_cat = {}
-    for key, value in param['misc']['use_types_codes'].items():
-        for string in value:
-            types_cat[string] = key
-    types_check = np.in1d(wu4.WaterUse.unique(), list(types_cat.keys())).all()
-    if not types_check:
-        raise ValueError('Some use types are missing in the parameters file. Check the use type table and the parameters file.')
-    wu4.WaterUse.replace(types_cat, inplace=True)
-    wu4['WaterUse'] = wu4['WaterUse'].astype('category')
+    ## Check that all use types exist in the mapping table
+    uses1 = db.use_mapping.Accela.unique()
+    uses2 = permit_use2['Water Use'].unique()
+    mis_uses = uses2[~np.in1d(uses2, uses1)]
+    if mis_uses.shape[0] > 0:
+        raise ValueError('Missing some use types')
 
-    ## Join to get the IDs and filter WAPs
-    wu5 = pd.merge(wu4, act_types1[['ActivityID', 'ActivityName']], left_on='UseType', right_on='ActivityName').drop(['UseType', 'ActivityName'], axis=1)
-    wu5 = pd.merge(wu5, wap_site, on='WAP').drop('WAP', axis=1)
+    ## Combine other use types
+    permit_use2.rename(columns={'Water Use': 'Accela'}, inplace=True)
+    permit_use3 = pd.merge(permit_use2, db.use_mapping, on='Accela')
+    permit_use4 = pd.merge(permit_use3, db.use_priorities, on='WaitakiTable5')
+    permit_use4.sort_values('Rank', inplace=True)
+    permit_use5 = permit_use4.drop_duplicates(['RecordNumber']).drop(['Activity', 'Rank'], axis=1).copy()
 
-    ## Drop duplicate uses
-    wu5.WaterUse.cat.set_categories(param['misc']['use_types_priorities'], True, inplace=True)
-    wu5 = wu5.sort_values('WaterUse')
-    wu6 = wu5.drop_duplicates(['RecordNumber', 'ActivityID', 'SiteID']).copy()
+    ## Save
+    print('--Save results')
+    permit_use5['EffectiveFromDate'] = run_time_start
+    out_param = param['source data']['permit_use']
+    sf.to_table(permit_use5, out_param['table'], out_param['username'], out_param['password'], out_param['account'], out_param['database'], out_param['schema'], True)
+
+    return permit_use5
 
 
 

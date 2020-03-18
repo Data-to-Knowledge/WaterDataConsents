@@ -13,6 +13,7 @@ from process_waps import process_waps
 from process_allocation import process_allo
 from process_limits import process_limits
 from aggregate_allocation import agg_allo
+from process_use_types import process_use_types
 
 #########################################
 ### Get todays date-time
@@ -42,6 +43,9 @@ with open(args.yaml_path) as param:
 
 print('---Process the Waps')
 waps = process_waps(param)
+
+print('---Process use types')
+permit_use = process_use_types(param)
 
 print('---Process the Allocation')
 allo1 = process_allo(param)
