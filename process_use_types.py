@@ -24,6 +24,16 @@ def process_use_types(param):
     """
 
     """
+    db = types.SimpleNamespace()
+
+    for t in param['misc']['UseProcessing']['tables']:
+        p = param['source data'][t]
+        print(p['table'])
+        if p['schema'] != 'public':
+            stmt = 'select * from "{schema}"."{table}"'.format(schema=p['schema'], table=p['table'])
+        else:
+            stmt = 'select * from "{table}"'.format(table=p['table'])
+        setattr(db, t, sf.read_table(p['username'], p['password'], p['account'], p['database'], p['schema'], stmt))
 
     ## Split into WAPs by take type equivelant
     wu3 = wu2.copy()
