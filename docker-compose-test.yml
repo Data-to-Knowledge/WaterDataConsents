@@ -1,7 +1,7 @@
 version: "2"
 
 services:
-    tasker_test:
+    tasker:
         image: strm/tasker
         volumes:
             - "/var/run/docker.sock:/var/run/docker.sock"
