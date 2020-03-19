@@ -30,7 +30,7 @@ print('---Read in parameters')
 #
 #with open(os.path.join(base_dir, 'parameters-dev.yml')) as param:
 #    param = yaml.safe_load(param)
-
+#d
 parser = argparse.ArgumentParser()
 parser.add_argument('yaml_path')
 args = parser.parse_args()

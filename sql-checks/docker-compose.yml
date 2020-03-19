@@ -3,4 +3,4 @@ services:
   sql-check:
     image: mullenkamp/sql-server-check:latest
     volumes:
-      - C:\ecan\git\water_data\WaterDataConsents\sql-checks\parameters-dev.yml:/parameters.yml
+      - /home/mike/git/WaterDataConsents/sql-checks/parameters-dev.yml:/parameters.yml
