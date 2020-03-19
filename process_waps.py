@@ -92,8 +92,13 @@ def process_waps(param):
     waps3b['NzTmX'] = waps3b.geometry.x
     waps3b['NzTmY'] = waps3b.geometry.y
 
+    latlon = waps3b.geometry.to_crs(4326)
+    waps3b['Lat'] = latlon.geometry.y
+    waps3b['Lon'] = latlon.geometry.x
+
     waps4 = pd.DataFrame(waps3b.drop(['geometry'], axis=1))
     waps4[['NzTmX', 'NzTmY']] = waps4[['NzTmX', 'NzTmY']].round().astype(int)
+    waps4[['Lat', 'Lon']] = waps4[['Lat', 'Lon']].round(10)
     waps4.rename(columns={'Name': 'SpatialUnitName', 'distance': 'DistanceToWaterway'}, inplace=True)
 
     ## Check for differences

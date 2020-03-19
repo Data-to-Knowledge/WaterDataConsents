@@ -59,6 +59,8 @@ ca."RecordNumber" AS RecordNumber
 , ca."HydroGroup" as hydrogroup
 , ca."AllocationBlock" as allocationblock
 , ca."Wap" as wap
+, waps."Lon" as lon
+, waps."Lat" as lat
 , ca."SpatialUnitId" as spatialunitid
 , sn.spatialunitname
 , ca."ConsentStatus" as consentstatus
@@ -116,6 +118,7 @@ inner join
   gwl."Name" AS spatialunitname
   from "WATERDATAREPO"."Curated"."GwZoneLimits" as gwl) AS sn on ca."SpatialUnitId" = sn.SpatialUnitId
 inner join WATERDATAREPO."Curated"."PermitUseType" as u on ca."RecordNumber" = u."RecordNumber"
+inner join WATERDATAREPO."Curated"."Waps" as waps on ca."Wap" = waps."Wap"
 WHERE consentstatus in ('Issued - Active', 'Issued - Inactive', 'Issued - s124 Continuance', 'Application in Process');
 
 CREATE OR REPLACE View "PowerBiConsentsDetails" AS

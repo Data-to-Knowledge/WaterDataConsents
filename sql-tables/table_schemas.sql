@@ -34,6 +34,8 @@ create or replace TABLE "Waps" (
 	"Combined" BOOLEAN,
 	"NzTmX" INTEGER,
 	"NzTmY" INTEGER,
+	"Lat" float,
+	"Lon" float,
   "EffectiveFromDate" TIMESTAMP(0),
   CONSTRAINT pkWap PRIMARY KEY ("Wap")
 );
