@@ -229,6 +229,12 @@ def split_months(df, index, calc_col):
     if not 'Month' in index1:
         index1.extend(['Month'])
 
+    if df.empty:
+        cols = ['SpatialUnitId', 'AllocationBlock', 'Month']
+        cols.extend([calc_col])
+        empty_df = pd.DataFrame(columns=cols)
+        return empty_df
+
 #    sum1 = df.groupby(index1)[calc_col].sum()
     grp1 = df.groupby(['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap'])
 
