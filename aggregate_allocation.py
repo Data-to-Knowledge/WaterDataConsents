@@ -34,7 +34,7 @@ def agg_allo(param, sw_limits):
     waitaki_su = sw_limits.loc[sw_limits.PlanName == 'Waitaki Catchment', 'SpatialUnitId'].unique()
 
     gw_bool = (rv6.HydroGroup == 'Groundwater') | rv6.Combined
-    sw_bool = (rv6.HydroGroup == 'Surface Water') & (~rv6.Combined | rv6['SpatialUnitId'].isin(waitaki_su))
+    sw_bool = (rv6.HydroGroup == 'Surface Water') | (rv6.Combined & (~rv6['SpatialUnitId'].isin(waitaki_su)))
 
     ## Filter for active consents
     active_bool = rv6.ConsentStatus.isin(['Issued - Active', 'Issued - Inactive', 'Issued - s124 Continuance'])
