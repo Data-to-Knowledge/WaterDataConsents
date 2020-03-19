@@ -1,4 +1,4 @@
-pyyamls
+pyyaml
 geopandas
 pandas
 pdsf
