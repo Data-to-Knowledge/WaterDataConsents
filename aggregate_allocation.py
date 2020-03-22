@@ -95,6 +95,8 @@ def agg_allo(param, sw_limits):
     out_param = param['source data']['sw_zone_allo']
     sf.to_table(sw2, out_param['table'], out_param['username'], out_param['password'], out_param['account'], out_param['database'], out_param['schema'], True)
 
+    return zone3, sw2
+
 
 
 

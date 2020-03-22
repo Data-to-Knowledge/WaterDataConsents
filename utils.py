@@ -47,7 +47,13 @@ def json_filters(json_lst, only_operative=True, only_gw=False):
             json_lst1.append(j)
 
     if only_operative:
-        json_lst1 = [j for j in json_lst1 if (j['status']['status'] == 'Operative') and (pd.Timestamp(j['status']['fromDate']) <= today1)]
+        t1 = []
+        for j in json_lst1:
+            for s in j['groupStatus']:
+                if (s['status'] == 'Operative') and (pd.Timestamp(s['fromDate']).tz_localize(None) <= today1):
+                    t1.append(j)
+        json_lst1 = t1
+        # json_lst1 = [j for j in json_lst1 if (j['groupStatus']['status'] == 'Operative') and (pd.Timestamp(j['status']['fromDate']) <= today1)]
 
     ## Select only GW limits and combined GW/SW limits
     if only_gw:

@@ -54,4 +54,4 @@ print('---Process the Limits')
 gw_combo1, sw_limits = process_limits(param)
 
 print('---Aggregate the Allocation')
-agg1 = agg_allo(param, sw_limits)
+gw_agg, sw_agg = agg_allo(param, sw_limits)
