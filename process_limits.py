@@ -28,6 +28,7 @@ def process_limits(param):
     l_data1, t_data1, units = process_limit_data(json_lst1)
 #    sg = assign_notes(sg1).drop_duplicates('spatialId').drop('HydroGroup', axis=1)
     sg = assign_notes(sg1)
+    sg.notes = sg.notes.str[:300]
 
     ##################################################
     ### GW limits
