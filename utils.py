@@ -139,11 +139,12 @@ def process_limit_data(json_lst):
 
     for j in json_lst.copy():
         for m in j['managementUnit']:
-            for l in m['limit']:
-                l['id'] = j['id']
-                l['Allocation Block'] = m['parameterName']
-                l['units'] = m['units']
-                l_lst1.append(l)
+            if m['parameterType'] == 'Allocation Block':
+                for l in m['limit']:
+                    l['id'] = j['id']
+                    l['Allocation Block'] = m['parameterName']
+                    l['units'] = m['units']
+                    l_lst1.append(l)
 
     l_data = pd.DataFrame(l_lst1)
 

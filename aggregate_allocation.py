@@ -11,7 +11,7 @@ from pdsf import sflake as sf
 from utils import split_months
 
 
-def agg_allo(param, sw_limits):
+def agg_allo(param, sw_limits, allo):
     """
 
     """
@@ -21,11 +21,12 @@ def agg_allo(param, sw_limits):
     #######################################
     ### Read in source data
 
-    p = param['source data']['allo_calc']
+    # p = param['source data']['allo_calc']
 
-    stmt = 'select * from "{schema}"."{table}"'.format(schema=p['schema'], table=p['table'])
+    # stmt = 'select * from "{schema}"."{table}"'.format(schema=p['schema'], table=p['table'])
 
-    rv6 = sf.read_table(p['username'], p['password'], p['account'], p['database'], p['schema'], stmt)
+    # rv6 = sf.read_table(p['username'], p['password'], p['account'], p['database'], p['schema'], stmt)
+    rv6 = allo.copy()
 
     #######################################
     ### Aggregation

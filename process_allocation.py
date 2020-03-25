@@ -146,7 +146,7 @@ def process_allo(param):
     #    av1.rename(columns={'GwAllocationBlock': 'AllocationBlock'}, inplace=True)
     #    wa6.rename(columns={'SwAllocationBlock': 'AllocationBlock'}, inplace=True)
 
-    wa6.replace({'SwAllocationBlock': {'In Waitaki': 'A'}}, inplace=True)
+    # wa6.replace({'SwAllocationBlock': {'In Waitaki': 'A'}}, inplace=True)
 
     ## Combine volumes with rates !!! Needs to be changed later!!!
     #    wa7 = pd.merge(av1, wa6, on=['RecordNumber', 'TakeType'])

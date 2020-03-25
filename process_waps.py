@@ -18,7 +18,7 @@ import geopandas as gpd
 ### Function
 
 
-def process_waps(param):
+def process_waps(param, json_lst):
     """
 
     """
