@@ -7,10 +7,10 @@ Created on Thu Jun  7 11:41:44 2018
 import pandas as pd
 import numpy as np
 from pdsf import sflake as sf
-from utils import json_filters, process_limit_data, assign_notes, get_json_from_api, extract_spatial_units
+from utils import process_limit_data, assign_notes, extract_spatial_units
 
 
-def process_limits(param):
+def process_limits(param, json_lst):
     """
 
     """
@@ -22,12 +22,11 @@ def process_limits(param):
     ### Read in source data and update accela tables in ConsentsReporting db
     print('--Reading in source data...')
 
-    json_lst = get_json_from_api(param['misc']['PlanLimits']['api_url'], param['misc']['PlanLimits']['api_headers'])
-    json_lst1 = json_filters(json_lst, only_operative=True)
-    hydro_units, sg1 = extract_spatial_units(json_lst1)
-    l_data1, t_data1, units = process_limit_data(json_lst1)
+    hydro_units, sg1 = extract_spatial_units(json_lst)
+    l_data1, t_data1, units = process_limit_data(json_lst)
 #    sg = assign_notes(sg1).drop_duplicates('spatialId').drop('HydroGroup', axis=1)
     sg = assign_notes(sg1)
+    sg.notes = sg.notes.str[:300]
 
     ##################################################
     ### GW limits

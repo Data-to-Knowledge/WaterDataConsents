@@ -42,7 +42,8 @@ swa."NewAllocationInProgress" as NewAllocationInProgress,
 swl."AllocationLimit" as AllocationLimit,
 iff(swl."AllocationLimit" = 0, 0, (swl."AllocationLimit" - swa."AllocatedRate")) as AllocationAvailable,
 iff(swl."AllocationLimit" = 0, 0, (swa."AllocatedRate"/swl."AllocationLimit")*100)::Int as AllocatedPercentage,
-swl."Units" as units, swl."Notes" as notes,
+swl."Units" as units,
+swl."Notes" as notes,
 swl."PlanName" AS PlanName,
 swl."PlanSection" AS PlanSection,
 swl."PlanTable" AS PlanTable
@@ -58,6 +59,8 @@ ca."RecordNumber" AS RecordNumber
 , ca."HydroGroup" as hydrogroup
 , ca."AllocationBlock" as allocationblock
 , ca."Wap" as wap
+, waps."Lon" as lon
+, waps."Lat" as lat
 , ca."SpatialUnitId" as spatialunitid
 , sn.spatialunitname
 , ca."ConsentStatus" as consentstatus
@@ -99,6 +102,8 @@ end AS ToMonth
 , ca."IncludeInSwAllocation" as includeinswallocation
 , p."ECNumber" as ecnumber
 , p."HolderName" as holdername
+, u."Accela" as accelawateruse
+, u."WaitakiTable5" as WaitakiTable5
 , ca."EffectiveFromDate" as calculatedat
 from "WATERDATAREPO"."Curated"."ConsentedAllocation" as ca
 inner join WATERDATAREPO."PUBLIC"."Consents_Permit_Source" as p on ca."RecordNumber" = p."RecordNumber"
@@ -112,6 +117,8 @@ inner join
   gwl."SpatialUnitId" as SpatialUnitId,
   gwl."Name" AS spatialunitname
   from "WATERDATAREPO"."Curated"."GwZoneLimits" as gwl) AS sn on ca."SpatialUnitId" = sn.SpatialUnitId
+inner join WATERDATAREPO."Curated"."PermitUseType" as u on ca."RecordNumber" = u."RecordNumber"
+inner join WATERDATAREPO."Curated"."Waps" as waps on ca."Wap" = waps."Wap"
 WHERE consentstatus in ('Issued - Active', 'Issued - Inactive', 'Issued - s124 Continuance', 'Application in Process');
 
 CREATE OR REPLACE View "PowerBiConsentsDetails" AS
