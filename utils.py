@@ -7,9 +7,9 @@ Created on Tue Jan 15 15:59:37 2019
 import pandas as pd
 import numpy as np
 #from pyproj import Proj, CRS, Transformer
-import geopandas as gpd
+# import geopandas as gpd
 #from gistools import vector
-from shapely import wkt
+# from shapely import wkt
 #import json
 import requests
 
@@ -62,47 +62,47 @@ def json_filters(json_lst, only_operative=True, only_gw=False):
     return json_lst1
 
 
-def geojson_convert(json_lst):
-    """
+# def geojson_convert(json_lst):
+#     """
 
-    """
-    gjson1 = []
-    hydro_units = {'Groundwater': {'value': [], 'label': []}, 'Surface Water': {'value': [], 'label': []}}
-    sg = []
+#     """
+#     gjson1 = []
+#     hydro_units = {'Groundwater': {'value': [], 'label': []}, 'Surface Water': {'value': [], 'label': []}}
+#     sg = []
 
-    for j in json_lst.copy():
-        if isinstance(j['spatialUnit'], list):
-            for g in j['spatialUnit']:
-                gjson1.append(g)
-                for h in j['hydroUnit']:
-                    sg.append([j['id'], g['id'], h])
-                    hydro_units[h]['value'].extend([g['id']])
-                    hydro_units[h]['label'].extend([g['name']])
-        if isinstance(j['spatialUnit'], dict):
-            gjson1.append(j['spatialUnit'])
-            for h in j['hydroUnit']:
-                sg.append([j['id'], g['id'], h])
-                hydro_units[h]['value'].extend([g['id']])
-                hydro_units[h]['label'].extend([g['name']])
+#     for j in json_lst.copy():
+#         if isinstance(j['spatialUnit'], list):
+#             for g in j['spatialUnit']:
+#                 gjson1.append(g)
+#                 for h in j['hydroUnit']:
+#                     sg.append([j['id'], g['id'], h])
+#                     hydro_units[h]['value'].extend([g['id']])
+#                     hydro_units[h]['label'].extend([g['name']])
+#         if isinstance(j['spatialUnit'], dict):
+#             gjson1.append(j['spatialUnit'])
+#             for h in j['hydroUnit']:
+#                 sg.append([j['id'], g['id'], h])
+#                 hydro_units[h]['value'].extend([g['id']])
+#                 hydro_units[h]['label'].extend([g['name']])
 
-#    for gj in gjson1:
-#        if gj['id'] == 'GWAZ0037':
-#            gj['color'] = 'rgb(204, 204, 204)'
-#        else:
-#            gj['color'] = plotly.colors.qualitative.Vivid[np.random.randint(0, 11)]
+# #    for gj in gjson1:
+# #        if gj['id'] == 'GWAZ0037':
+# #            gj['color'] = 'rgb(204, 204, 204)'
+# #        else:
+# #            gj['color'] = plotly.colors.qualitative.Vivid[np.random.randint(0, 11)]
 
-    gpd1 = pd.DataFrame(gjson1).dropna()
-    gpd1['geometry'] = gpd1['wkt'].apply(wkt.loads)
-    gpd2 = gpd.GeoDataFrame(gpd1, geometry='geometry', crs=2193).drop('wkt', axis=1).to_crs(4326).set_index('id')
-    gpd2['geometry'] = gpd2.simplify(0.001)
+#     gpd1 = pd.DataFrame(gjson1).dropna()
+#     gpd1['geometry'] = gpd1['wkt'].apply(wkt.loads)
+#     gpd2 = gpd.GeoDataFrame(gpd1, geometry='geometry', crs=2193).drop('wkt', axis=1).to_crs(4326).set_index('id')
+#     gpd2['geometry'] = gpd2.simplify(0.001)
 
-    sg_df = pd.DataFrame(sg)
-    sg_df.columns = ['id', 'spatialId', 'HydroGroup']
-    sg_df = sg_df[sg_df.spatialId.isin(gpd1.id)].copy()
+#     sg_df = pd.DataFrame(sg)
+#     sg_df.columns = ['id', 'spatialId', 'HydroGroup']
+#     sg_df = sg_df[sg_df.spatialId.isin(gpd1.id)].copy()
 
-    gjson2 = gpd2.__geo_interface__
+#     gjson2 = gpd2.__geo_interface__
 
-    return gjson2, hydro_units, pd.DataFrame(gpd2.drop('geometry', axis=1)).reset_index(), sg_df
+#     return gjson2, hydro_units, pd.DataFrame(gpd2.drop('geometry', axis=1)).reset_index(), sg_df
 
 
 def extract_spatial_units(json_lst):

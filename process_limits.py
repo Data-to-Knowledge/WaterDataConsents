@@ -7,7 +7,7 @@ Created on Thu Jun  7 11:41:44 2018
 import pandas as pd
 import numpy as np
 from pdsf import sflake as sf
-from utils import json_filters, process_limit_data, assign_notes, get_json_from_api, extract_spatial_units
+from utils import process_limit_data, assign_notes, extract_spatial_units
 
 
 def process_limits(param, json_lst):
