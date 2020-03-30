@@ -15,6 +15,8 @@ CREATE or replace TABLE "ConsentedAllocation" (
 	"ToMonth" INTEGER,
 	"AllocatedRate" INTEGER,
 	"AllocatedAnnualVolume" INTEGER,
+	"IncludeInGwAllocation" boolean,
+	"IncludeInSwAllocation" boolean,
     "EffectiveFromDate" TIMESTAMP(0),
   CONSTRAINT pkCA PRIMARY KEY ("RecordNumber", "HydroGroup", "AllocationBlock", "Wap")
 )
@@ -32,6 +34,8 @@ create or replace TABLE "Waps" (
 	"Combined" BOOLEAN,
 	"NzTmX" INTEGER,
 	"NzTmY" INTEGER,
+	"Lat" float,
+	"Lon" float,
   "EffectiveFromDate" TIMESTAMP(0),
   CONSTRAINT pkWap PRIMARY KEY ("Wap")
 );
@@ -84,4 +88,13 @@ CREATE or replace TABLE "SwZoneLimits" (
   "Notes" TEXT(300),
   "EffectiveFromDate" TIMESTAMP(0),
   CONSTRAINT pkSwZoneAllo PRIMARY KEY ("ManagementGroupId", "AllocationBlock", "Month")
+);
+
+create or replace TABLE "PermitUseType" (
+	"RecordNumber" TEXT(100),
+	"Accela" TEXT(100),
+	"Lawa" TEXT(100),
+	"WaitakiTable5" TEXT(100),
+	"EffectiveFromDate" TIMESTAMP_NTZ(0),
+	constraint PKpermituse primary key ("RecordNumber")
 );

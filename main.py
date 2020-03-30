@@ -4,6 +4,7 @@ Created on Mon Feb  3 13:56:21 2020
 
 @author: MichaelEK
 """
+import pickle
 import os
 import argparse
 import pandas as pd
@@ -13,6 +14,8 @@ from process_waps import process_waps
 from process_allocation import process_allo
 from process_limits import process_limits
 from aggregate_allocation import agg_allo
+from process_use_types import process_use_types
+from utils import json_filters, get_json_from_api
 
 #########################################
 ### Get todays date-time
@@ -29,7 +32,7 @@ print('---Read in parameters')
 #
 #with open(os.path.join(base_dir, 'parameters-dev.yml')) as param:
 #    param = yaml.safe_load(param)
-
+#d
 parser = argparse.ArgumentParser()
 parser.add_argument('yaml_path')
 args = parser.parse_args()
@@ -37,25 +40,28 @@ args = parser.parse_args()
 with open(args.yaml_path) as param:
     param = yaml.safe_load(param)
 
-## Integrety checks
-use_types_check = np.in1d(list(param['misc']['use_types_codes'].keys()), param['misc']['use_types_priorities']).all()
+########################################
+### Pull out the limits data
 
-if not use_types_check:
-    raise ValueError('use_type_priorities parameter does not encompass all of the use type categories. Please fix the parameters file.')
+json_lst1 = get_json_from_api(param['misc']['PlanLimits']['api_url'], param['misc']['PlanLimits']['api_headers'])
+json_lst = json_filters(json_lst1, only_operative=True)
+
+# pickle.dump(json_lst, open("pl_json.pickle", "wb"))
 
 ########################################
 ### Run the process
 
 print('---Process the Waps')
-waps = process_waps(param)
+waps = process_waps(param, json_lst)
+
+print('---Process use types')
+permit_use, use_mapping = process_use_types(param)
 
 print('---Process the Allocation')
-allo1 = process_allo(param)
+allo = process_allo(param, permit_use)
 
 print('---Process the Limits')
-gw_combo1, sw_combo2 = process_limits(param)
+gw_combo1, sw_limits = process_limits(param, json_lst)
 
 print('---Aggregate the Allocation')
-agg1 = agg_allo(param, sw_combo2)
-
-
+gw_agg, sw_agg = agg_allo(param, allo, use_mapping)

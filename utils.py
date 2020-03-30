@@ -7,9 +7,9 @@ Created on Tue Jan 15 15:59:37 2019
 import pandas as pd
 import numpy as np
 #from pyproj import Proj, CRS, Transformer
-import geopandas as gpd
+# import geopandas as gpd
 #from gistools import vector
-from shapely import wkt
+# from shapely import wkt
 #import json
 import requests
 
@@ -22,15 +22,11 @@ today1 = pd.Timestamp.today()
 
 month_map = {1: 'Jul', 2: 'Aug', 3: 'Sep', 4: 'Oct', 5: 'Nov', 6: 'Dec', 7: 'Jan', 8: 'Feb', 9: 'Mar', 10: 'Apr', 11: 'May', 12: 'Jun'}
 
-api_url = 'https://waterdata-dev-apis.azure-api.net/planlimits/v1/ManagementGroup/List'
-api_headers = {'Ocp-Apim-Subscription-Key': '2b672c6e34eb4829ad80b55377c0dfda'}
-
 ##########################################
 ### Functions
 
 
-
-def get_json_from_api():
+def get_json_from_api(api_url, api_headers):
     """
 
     """
@@ -51,7 +47,13 @@ def json_filters(json_lst, only_operative=True, only_gw=False):
             json_lst1.append(j)
 
     if only_operative:
-        json_lst1 = [j for j in json_lst1 if (j['status']['status'] == 'Operative') and (pd.Timestamp(j['status']['fromDate']) <= today1)]
+        t1 = []
+        for j in json_lst1:
+            for s in j['groupStatus']:
+                if (s['status'] == 'Operative') and (pd.Timestamp(s['fromDate']).tz_localize(None) <= today1):
+                    t1.append(j)
+        json_lst1 = t1
+        # json_lst1 = [j for j in json_lst1 if (j['groupStatus']['status'] == 'Operative') and (pd.Timestamp(j['status']['fromDate']) <= today1)]
 
     ## Select only GW limits and combined GW/SW limits
     if only_gw:
@@ -60,47 +62,73 @@ def json_filters(json_lst, only_operative=True, only_gw=False):
     return json_lst1
 
 
-def geojson_convert(json_lst):
+# def geojson_convert(json_lst):
+#     """
+
+#     """
+#     gjson1 = []
+#     hydro_units = {'Groundwater': {'value': [], 'label': []}, 'Surface Water': {'value': [], 'label': []}}
+#     sg = []
+
+#     for j in json_lst.copy():
+#         if isinstance(j['spatialUnit'], list):
+#             for g in j['spatialUnit']:
+#                 gjson1.append(g)
+#                 for h in j['hydroUnit']:
+#                     sg.append([j['id'], g['id'], h])
+#                     hydro_units[h]['value'].extend([g['id']])
+#                     hydro_units[h]['label'].extend([g['name']])
+#         if isinstance(j['spatialUnit'], dict):
+#             gjson1.append(j['spatialUnit'])
+#             for h in j['hydroUnit']:
+#                 sg.append([j['id'], g['id'], h])
+#                 hydro_units[h]['value'].extend([g['id']])
+#                 hydro_units[h]['label'].extend([g['name']])
+
+# #    for gj in gjson1:
+# #        if gj['id'] == 'GWAZ0037':
+# #            gj['color'] = 'rgb(204, 204, 204)'
+# #        else:
+# #            gj['color'] = plotly.colors.qualitative.Vivid[np.random.randint(0, 11)]
+
+#     gpd1 = pd.DataFrame(gjson1).dropna()
+#     gpd1['geometry'] = gpd1['wkt'].apply(wkt.loads)
+#     gpd2 = gpd.GeoDataFrame(gpd1, geometry='geometry', crs=2193).drop('wkt', axis=1).to_crs(4326).set_index('id')
+#     gpd2['geometry'] = gpd2.simplify(0.001)
+
+#     sg_df = pd.DataFrame(sg)
+#     sg_df.columns = ['id', 'spatialId', 'HydroGroup']
+#     sg_df = sg_df[sg_df.spatialId.isin(gpd1.id)].copy()
+
+#     gjson2 = gpd2.__geo_interface__
+
+#     return gjson2, hydro_units, pd.DataFrame(gpd2.drop('geometry', axis=1)).reset_index(), sg_df
+
+
+def extract_spatial_units(json_lst):
     """
 
     """
-    gjson1 = []
     hydro_units = {'Groundwater': {'value': [], 'label': []}, 'Surface Water': {'value': [], 'label': []}}
     sg = []
 
     for j in json_lst.copy():
         if isinstance(j['spatialUnit'], list):
             for g in j['spatialUnit']:
-                gjson1.append(g)
                 for h in j['hydroUnit']:
                     sg.append([j['id'], g['id'], h])
                     hydro_units[h]['value'].extend([g['id']])
                     hydro_units[h]['label'].extend([g['name']])
         if isinstance(j['spatialUnit'], dict):
-            gjson1.append(j['spatialUnit'])
             for h in j['hydroUnit']:
                 sg.append([j['id'], g['id'], h])
                 hydro_units[h]['value'].extend([g['id']])
                 hydro_units[h]['label'].extend([g['name']])
 
-#    for gj in gjson1:
-#        if gj['id'] == 'GWAZ0037':
-#            gj['color'] = 'rgb(204, 204, 204)'
-#        else:
-#            gj['color'] = plotly.colors.qualitative.Vivid[np.random.randint(0, 11)]
-
-    gpd1 = pd.DataFrame(gjson1).dropna()
-    gpd1['geometry'] = gpd1['wkt'].apply(wkt.loads)
-    gpd2 = gpd.GeoDataFrame(gpd1, geometry='geometry', crs=2193).drop('wkt', axis=1).to_crs(4326).set_index('id')
-    gpd2['geometry'] = gpd2.simplify(0.001)
-
     sg_df = pd.DataFrame(sg)
     sg_df.columns = ['id', 'spatialId', 'HydroGroup']
-    sg_df = sg_df[sg_df.spatialId.isin(gpd1.id)].copy()
 
-    gjson2 = gpd2.__geo_interface__
-
-    return gjson2, hydro_units, pd.DataFrame(gpd2.drop('geometry', axis=1)).reset_index(), sg_df
+    return hydro_units, sg_df
 
 
 def process_limit_data(json_lst):
@@ -111,11 +139,12 @@ def process_limit_data(json_lst):
 
     for j in json_lst.copy():
         for m in j['managementUnit']:
-            for l in m['limit']:
-                l['id'] = j['id']
-                l['Allocation Block'] = m['parameterName']
-                l['units'] = m['units']
-                l_lst1.append(l)
+            if m['parameterType'] == 'Allocation Block':
+                for l in m['limit']:
+                    l['id'] = j['id']
+                    l['Allocation Block'] = m['parameterName']
+                    l['units'] = m['units']
+                    l_lst1.append(l)
 
     l_data = pd.DataFrame(l_lst1)
 
@@ -199,15 +228,35 @@ def assign_notes(sg_df):
     return sp4.drop(['hydro_count', 'joint_units'], axis=1)
 
 
-def split_months(df, index, month_col, calc_col):
+def split_months(df, index, calc_col):
     """
 
     """
     index1 = index.copy()
-    if not month_col in index1:
-        index1.extend([month_col])
+    if not 'Month' in index1:
+        index1.extend(['Month'])
 
-    sum1 = df.groupby(index1)[calc_col].sum()
+    if df.empty:
+        cols = ['SpatialUnitId', 'AllocationBlock', 'Month']
+        cols.extend([calc_col])
+        empty_df = pd.DataFrame(columns=cols)
+        return empty_df
+
+#    sum1 = df.groupby(index1)[calc_col].sum()
+    grp1 = df.groupby(['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap'])
+
+    lst1 = []
+    for index, g in grp1:
+#        print(index)
+        mons = range(g.FromMonth.min(), g.ToMonth.max() + 1)
+        val = g[calc_col].max()
+        index_list = list(index)
+        temp1 = [(index_list[0], index_list[1], index_list[2], index_list[3], m, val) for m in mons]
+        lst1.extend(temp1)
+    df1 = pd.DataFrame.from_records(lst1, columns=['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap', 'Month', calc_col])
+    df2 = pd.merge(df1, df[['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap', 'SpatialUnitId']], on=['RecordNumber', 'HydroGroup', 'AllocationBlock', 'Wap'])
+
+    sum1 = df2.groupby(['SpatialUnitId', 'AllocationBlock', 'Month'])[calc_col].sum()
 
     ldata0 = sum1.unstack(len(index1) - 1)
     col1 = set(ldata0.columns)
@@ -220,7 +269,6 @@ def split_months(df, index, month_col, calc_col):
     l_data1 = ldata0.ffill(axis=1).stack()
     l_data1.name = calc_col
     l_data1 = l_data1.reset_index()
-    l_data1.rename(columns={month_col: 'Month'}, inplace=True)
 
     return l_data1
 

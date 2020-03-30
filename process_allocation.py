@@ -12,7 +12,7 @@ from pdsf import sflake as sf
 from utils import split_months
 
 
-def process_allo(param):
+def process_allo(param, permit_use):
     """
 
     """
@@ -146,7 +146,7 @@ def process_allo(param):
     #    av1.rename(columns={'GwAllocationBlock': 'AllocationBlock'}, inplace=True)
     #    wa6.rename(columns={'SwAllocationBlock': 'AllocationBlock'}, inplace=True)
 
-    wa6.replace({'SwAllocationBlock': {'In Waitaki': 'A'}}, inplace=True)
+    # wa6.replace({'SwAllocationBlock': {'In Waitaki': 'A'}}, inplace=True)
 
     ## Combine volumes with rates !!! Needs to be changed later!!!
     #    wa7 = pd.merge(av1, wa6, on=['RecordNumber', 'TakeType'])
@@ -227,7 +227,7 @@ def process_allo(param):
 
     ## Allocated Volume
     av1 = db.allocated_volume.copy()
-    av1.replace({'GwAllocationBlock': {'In Waitaki': 'A'}}, inplace=True)
+    # av1.replace({'GwAllocationBlock': {'In Waitaki': 'A'}}, inplace=True)
 
     # Add in the Wap info
     ar1 = allo_rates1.reset_index()[['RecordNumber', 'SwAllocationBlock', 'TakeType', 'Wap', 'Rate150Day', 'Storativity', 'Combined', 'sd_cat', 'sw_vol_ratio', 'LowflowCondition']].copy()
@@ -317,8 +317,8 @@ def process_allo(param):
 
     rv2a = pd.merge(rv2, sw_allo_bool, on=['RecordNumber', 'Wap'])
     rv2 = pd.merge(rv2a, gw_allo_bool, on=['RecordNumber', 'Wap'])
-    rv3 = rv2[(rv2.HydroGroup == 'Surface Water') | (rv2.IncludeInGwAllocation)].drop('IncludeInGwAllocation', axis=1)
-    rv4 = rv3[(rv3.HydroGroup == 'Groundwater') | (rv3.IncludeInSwAllocation)].drop('IncludeInSwAllocation', axis=1)
+    rv3 = rv2[(rv2.HydroGroup == 'Surface Water') | (rv2.IncludeInGwAllocation)]
+    rv4 = rv3[(rv3.HydroGroup == 'Groundwater') | (rv3.IncludeInSwAllocation)]
 
     ## Calculate missing volumes and rates
 #    ann_bool = rv4.AllocatedAnnualVolume.isnull()
@@ -345,12 +345,20 @@ def process_allo(param):
     ## Combine with permit data
     rv5 = pd.merge(rv4, permits2[['RecordNumber', 'ConsentStatus', 'ApplicationStatus', 'FromDate', 'ToDate']].drop_duplicates('RecordNumber', keep='last'), on='RecordNumber')
 
+    ## Update the Waitaki use types
+    rv5a = pd.merge(rv5, permit_use[['RecordNumber', 'WaitakiTable5']], on='RecordNumber')
+    rv5a.loc[rv5a.AllocationBlock == 'In Waitaki', 'AllocationBlock'] = rv5a.loc[rv5a.AllocationBlock == 'In Waitaki', 'WaitakiTable5']
+    rv5b = rv5a.drop('WaitakiTable5', axis=1)
+
     ## Combine with other Wap data
     waps1 = waps[['Wap', 'GwSpatialUnitId', 'SwSpatialUnitId', 'Combined']].copy()
-    rv6 = pd.merge(rv5, waps1, on='Wap')
+    rv6 = pd.merge(rv5b, waps1, on='Wap')
 
-    gw_bool = (rv6.HydroGroup == 'Groundwater') | (rv6.Combined)
-    sw_bool = (rv6.HydroGroup == 'Surface Water') & (~rv6.Combined)
+#    gw_bool = (rv6.HydroGroup == 'Groundwater') | (rv6.Combined)
+#    sw_bool = (rv6.HydroGroup == 'Surface Water') & (~rv6.Combined)
+
+    gw_bool = (rv6.HydroGroup == 'Groundwater')
+    sw_bool = (rv6.HydroGroup == 'Surface Water')
 
     rv6['SpatialUnitId'] = None
 
