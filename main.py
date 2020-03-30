@@ -4,6 +4,7 @@ Created on Mon Feb  3 13:56:21 2020
 
 @author: MichaelEK
 """
+import pickle
 import os
 import argparse
 import pandas as pd
@@ -45,6 +46,8 @@ with open(args.yaml_path) as param:
 json_lst1 = get_json_from_api(param['misc']['PlanLimits']['api_url'], param['misc']['PlanLimits']['api_headers'])
 json_lst = json_filters(json_lst1, only_operative=True)
 
+# pickle.dump(json_lst, open("pl_json.pickle", "wb"))
+
 ########################################
 ### Run the process
 
@@ -52,13 +55,13 @@ print('---Process the Waps')
 waps = process_waps(param, json_lst)
 
 print('---Process use types')
-permit_use = process_use_types(param)
+permit_use, use_mapping = process_use_types(param)
 
 print('---Process the Allocation')
-allo = process_allo(param)
+allo = process_allo(param, permit_use)
 
 print('---Process the Limits')
 gw_combo1, sw_limits = process_limits(param, json_lst)
 
 print('---Aggregate the Allocation')
-gw_agg, sw_agg = agg_allo(param, sw_limits, allo)
+gw_agg, sw_agg = agg_allo(param, allo, use_mapping)

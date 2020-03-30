@@ -64,7 +64,7 @@ def process_use_types(param):
     out_param = param['source data']['permit_use']
     sf.to_table(permit_use5, out_param['table'], out_param['username'], out_param['password'], out_param['account'], out_param['database'], out_param['schema'], True)
 
-    return permit_use5
+    return permit_use5, db.use_mapping.copy()
 
 
 
