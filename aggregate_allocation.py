@@ -61,6 +61,7 @@ def agg_allo(param, allo, use_mapping):
     # SW
     sw = rv6[sw_bool].copy()
     sw['SpatialUnitId'] = sw['SwSpatialUnitId']
+    sw.loc[sw.AllocationBlock.isin(use_mapping['WaitakiTable5'].unique()), 'AllocationBlock'] = 'A'
 
     sw_active1 = sw[sw.ConsentStatus.isin(active_lst)].copy()
     sw_process1 = sw[sw.ConsentStatus.isin(in_process_lst) & sw.ApplicationStatus.isin(ApplicationStatus_lst)].copy()
