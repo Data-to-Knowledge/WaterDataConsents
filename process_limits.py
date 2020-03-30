@@ -32,7 +32,8 @@ def process_limits(param, json_lst):
     ### GW limits
     print('--Process GW limits')
 
-    gw_sg = sg[sg.HydroGroup == 'Groundwater'].drop_duplicates('spatialId').drop('HydroGroup', axis=1)
+    # gw_sg = sg[sg.HydroGroup == 'Groundwater'].drop_duplicates('spatialId').drop('HydroGroup', axis=1)
+    gw_sg = sg[sg.HydroGroup == 'Groundwater'].drop('HydroGroup', axis=1)
 
     gw_combo1 = pd.merge(gw_sg, t_data1.drop(['fromMonth', 'toMonth'], axis=1), on='id')
     gw_combo1.rename(columns={'id': 'ManagementGroupId', 'spatialId': 'SpatialUnitId', 'Allocation Block': 'AllocationBlock', 'name': 'Name', 'planName': 'PlanName', 'planSection': 'PlanSection', 'planTable': 'PlanTable', 'limit': 'AllocationLimit', 'units': 'Units', 'notes': 'Notes'}, inplace=True)
@@ -48,7 +49,8 @@ def process_limits(param, json_lst):
     ### SW limits
     print('--Process SW limits')
 
-    sw_sg = sg[sg.HydroGroup == 'Surface Water'].drop_duplicates('spatialId').drop('HydroGroup', axis=1)
+    # sw_sg = sg[sg.HydroGroup == 'Surface Water'].drop_duplicates('spatialId').drop('HydroGroup', axis=1)
+    sw_sg = sg[sg.HydroGroup == 'Surface Water'].drop('HydroGroup', axis=1)
     t_data2 = t_data1.drop(['units', 'fromMonth', 'toMonth', 'limit'], axis=1).drop_duplicates(['id', 'Allocation Block'])
 
     sw_combo1 = pd.merge(sw_sg, l_data1, on='id')
