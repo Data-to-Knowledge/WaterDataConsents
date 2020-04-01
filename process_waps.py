@@ -20,7 +20,14 @@ import geopandas as gpd
 
 def process_waps(param, json_lst):
     """
-
+    
+    WILCO comments/questions:
+    1) What is the function of this script? I assume it is some sort of spatial selection of WAPs ? Think it would be good to add the function description here....
+    2) Is the WAP selection done on locations within polygons, or neareast distance to streams? For stream depletion it is probably better to use the SD coordinates instead of the
+        WAP coordinates.....
+    3) And what does this function return? Is it a pandas dataframe? 
+    
+    
     """
     run_time_start = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
     print(run_time_start)
