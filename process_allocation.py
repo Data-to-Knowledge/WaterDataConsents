@@ -304,7 +304,8 @@ def process_allo(param, permit_use):
     vols1['Rate150DayAgg'] = grp3['Rate150Day'].transform('sum')
     vols1['ratio'] = vols1['Rate150Day'] / vols1['Rate150DayAgg']
     vols1.loc[vols1['ratio'].isnull(), 'ratio'] = 0
-    vols1['FullAnnualVolume'] = (vols1['FullAnnualVolume'] * vols1['ratio']).round()  ##-WILCO COMMENT: Maybe remove the round() here if the output is used as input in another function to prevent aggregating rounding errors
+    vols1['FullAnnualVolume'] = (vols1['FullAnnualVolume'] * vols1['ratio'])
+
     vols1.drop(['Rate150DayAgg', 'ratio'], axis=1, inplace=True)
 #    vols1['FullAnnualVolume'] = (vols1['FullAnnualVolume'] * vols1['ratio'] / vols1['WapCount']).round()
 #    vols1.drop(['WapRateAgg', 'ratio', 'WapCount'], axis=1, inplace=True)
