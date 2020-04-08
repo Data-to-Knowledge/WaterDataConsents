@@ -37,13 +37,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument('yaml_path')
 args = parser.parse_args()
 
-
-'''
-WILCO comments/questions:
-    Can I see how those yaml parameter files look like? I think they are zipped and password protected? Also keen to seen the format of those files for my own interest of maybe
-    switching from .cfg to .yml
-'''
-
 with open(args.yaml_path) as param:
     param = yaml.safe_load(param)
 
@@ -68,11 +61,6 @@ permit_use, use_mapping = process_use_types(param)
 #-WILCO: see my comments in the process_allocation.py file
 print('---Process the Allocation')
 allo = process_allo(param, permit_use)
-
-'''
-WILCO comments/questions:
-    I think we still need to go through the two functions below?
-'''
 
 print('---Process the Limits')
 gw_combo1, sw_limits = process_limits(param, json_lst)

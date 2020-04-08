@@ -57,22 +57,22 @@ def process_allo(param, permit_use):
     ##################################################
     ### Permit table
     print('--Process Permits')
-    
+
     '''
     WILCO:
         Selection FromDate and toDate was a bit of a pain in the ass i remember for the Rakaia as well. I don't think there is any filtering done here below yet, but maybe it is
         good to consider that:
-            1) Some consents may have never been active between the FromDate and ToDate. The 'Given Effect To' field can help with that. If the given effect to is larger than the 
+            1) Some consents may have never been active between the FromDate and ToDate. The 'Given Effect To' field can help with that. If the given effect to is larger than the
                 toDate, then that consent was never exercised and (at least for modelling purposes) should be dropped from the list of consents.
             2) If the Given Effect To date is larger than the fromDate, then set FromDate equal to Given Effect To.
             3) For parent and child consents (orginal and renewals) it is good to check the FromDate and ToDate. In the Ecan database the FromDate of the renewal is most of the time
                 equal to the ToDate of the parent (original record), which would lead to double accounting for that day. For the Rakaia I fixed this by making sure that sure that
                 the toDate is always 1 day before the frommDate of the child consent.
-        
-        Below I have inserted some (commented) code that I used in my Rakaia work, so not sure whether you want to use this yes/no. 
-    
+
+        Below I have inserted some (commented) code that I used in my Rakaia work, so not sure whether you want to use this yes/no.
+
     '''
-    
+
 #     #-Select consents that were active between sdate and edate
 #     print 'Filter consents that were active between %s and %s...' %(sdate.strftime('%d-%m-%Y'), edate.strftime('%d-%m-%Y'))
 #     df1 = df.loc[(df['toDate']>pd.Timestamp(sdate)) & (df['fmDate']<=pd.Timestamp(edate))]
@@ -81,7 +81,7 @@ def process_allo(param, permit_use):
 #     df2 = df1.dropna(how='all')
 #     #-If 'Given Effect To' date is later than 'fmDate', then the 'fmDate' field is set to 'Given Effect To'
 #     df2.loc[(df2['fmDate'] < df2['Given Effect To']),['fmDate']]=  df2['Given Effect To']
-#      
+#
 #     #-Unique consent numbers of 'OriginalRecord'
 #     ori_records = pd.unique(df2['OriginalRecord'])
 #     df2_columns = list(df2.columns)
@@ -100,12 +100,12 @@ def process_allo(param, permit_use):
 #     #-get rid of old dataframes
 #     df = df2.copy()
 #     df1 = None; df2 = None; del df1, df2
-#      
+#
 #     #-For consents that are active for one day, the toDate may now (because of extracting one day from toDate) be smaller than fmDate. Those records are removed
 #     df = df.loc[df['toDate']>=df['fmDate']]
-    
-    
-    
+
+
+
 
     ## Clean data
     permits2 = db.permit.copy()
@@ -162,12 +162,12 @@ def process_allo(param, permit_use):
     wa4 = wa4[wa4.Wap.notnull()].copy()
 
     # Distribute the months
-    
+
     ###-WILCO COMMENT
     ###-I think it would be good to explain why it is what you are doing below. This is about the simplification/assumption that ['RecordNumber', 'TakeType', 'SwAllocationBlock', 'Wap']
     ###-can have more than one record, meaning that there are different rates for different months, correct? I think this methodology could be explained a bit in detail so that the user
     ###-knows/understands why/how this is done.
-    
+
     cols1 = wa4.columns.tolist()
     from_mon_pos = cols1.index('FromMonth')
     to_mon_pos = cols1.index('ToMonth')
@@ -227,7 +227,7 @@ def process_allo(param, permit_use):
     allo_rates1['RateWeekly'] = (allo_rates1['VolumeWeekly'] / 7 / 24 / 60 / 60) * 1000
     allo_rates1['Rate150Day'] = (allo_rates1['Volume150Day'] / 150 / 24 / 60 / 60) * 1000
 
-    # SD categories - According to the LWRP!
+    # SD categories - According to the LWRP! Reference the schedules!
     rate_bool = (allo_rates1['Rate150Day'] * (allo_rates1['SD1_150Day'] * 0.01)) > 5
 
     allo_rates1['sd_cat'] = 'low'
@@ -243,7 +243,6 @@ def process_allo(param, permit_use):
     allo_rates1.loc[allo_rates1.sd_cat == 'high', 'sw_vol_ratio'] = 0.75
     allo_rates1.loc[allo_rates1.sd_cat == 'direct', 'sw_vol_ratio'] = 1
 
-    # Remove SW takes that are flagged as not in allocation ---> This sounds ok to be, but do we still keep track of those takes that are not in SW allocation? Or is this not used for any purpose?
     allo_rates1 = allo_rates1[allo_rates1['IncludeInSwAllocation'] | (allo_rates1['TakeType'] == 'Take Groundwater')].copy()
 
     ## Assign Rates
@@ -261,21 +260,20 @@ def process_allo(param, permit_use):
 
     rates1['Surface Water'] = 0
     rates1['Groundwater'] = 0
-    
-    ##-WILCO COMMENT: I do not see a surface water rate calculation below for the 'low' category. Does that mean the SD rate is always zero for this category? 
+
+    ##-WILCO COMMENT: I do not see a surface water rate calculation below for the 'low' category. Does that mean the SD rate is always zero for this category? # Mike response: Yes!
 
     rates1.loc[gw_bool, 'Groundwater'] = rates1.loc[gw_bool, 'Rate150Day']
     rates1.loc[mod_bool | high_bool, 'Surface Water'] = rates1.loc[mod_bool | high_bool, 'Rate150Day'] * (rates1.loc[mod_bool | high_bool, 'SD1_150Day'] * 0.01)
 
-    #-WILCO COMMENT: Explain what is happening below. This is related to aquifer tests, correct? And if those tests have been done, then the sd rate is extracted from the gw allocation, correct?
+    #-WILCO COMMENT: Explain what is happening below. This is related to aquifer tests, correct? And if those tests have been done, then the sd rate is extracted from the gw allocation, correct? Reference the new method doc/schedule.
     alt_bool = gw_bool & (((rates1.Storativity | lf_cond_bool) & (mod_bool | high_bool)) | rates1.Combined)
     rates1.loc[alt_bool, 'Groundwater'] = rates1.loc[alt_bool, 'Rate150Day']  - rates1.loc[alt_bool, 'Surface Water']
-    
-    #-WICLO COMMENT: I guess here you allocate the full daily groundwater rate to sw allocation if it is classified as 'direct' ?
+
+    #-WICLO COMMENT: I guess here you allocate the full daily groundwater rate to sw allocation if it is classified as 'direct' ? Mike response: Yes!
     rates1.loc[direct_bool & gw_bool, 'Surface Water'] = rates1.loc[direct_bool & gw_bool, 'RateDaily']
     rates1.loc[(direct_bool & gw_bool) & (rates1.Storativity | lf_cond_bool), 'Groundwater'] = 0
 
-    #-WILCO COMMENT: Ok, so this overwrites all SW takes with the SW allocated rates...
     rates1.loc[sw_bool, 'Surface Water'] = rates1.loc[sw_bool, 'AllocatedRate']
 
     rates2 = rates1[['Groundwater', 'Surface Water']].stack().reset_index()
@@ -289,7 +287,7 @@ def process_allo(param, permit_use):
     av1 = db.allocated_volume.copy()
     # av1.replace({'GwAllocationBlock': {'In Waitaki': 'A'}}, inplace=True)
 
-    # Add in the Wap info   ---- WILCO COMMENT: would it maybe be nice to include the WAP SD location X and Y as well? Or is this irrelevant for the purpose of this script?
+    # Add in the Wap info
     ar1 = allo_rates1.reset_index()[['RecordNumber', 'SwAllocationBlock', 'TakeType', 'Wap', 'Rate150Day', 'Storativity', 'Combined', 'sd_cat', 'sw_vol_ratio', 'LowflowCondition']].copy()
     ar2_grp = ar1.groupby(['RecordNumber', 'TakeType', 'Wap'])
     ar2_rates = ar2_grp[['Rate150Day']].sum()
@@ -322,12 +320,9 @@ def process_allo(param, permit_use):
 
     vols1.loc[discount_bool, 'Groundwater'] = vols1.loc[discount_bool, 'FullAnnualVolume'] - vols1.loc[discount_bool, 'Surface Water']
 
-    # Split the take types by SW and GW to assign the appropraite allocation block type
+    # Split the take types by SW and GW to assign the appropraite allocation block type - Put more info about why this has to happen!
     sw_vols1 = vols1[vols1.TakeType == 'Take Surface Water'].copy()
     gw_vols1 = vols1[vols1.TakeType == 'Take Groundwater'].copy()
-
-############-WILCO COMMENT: Still need to go through the code below...
-
 
     sw_vols1.rename(columns={'GwAllocationBlock': 'SwAllocationBlock'}, inplace=True)
 
