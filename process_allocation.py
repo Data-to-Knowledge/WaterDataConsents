@@ -14,7 +14,19 @@ from utils import split_months
 
 def process_allo(param, permit_use):
     """
-    Add function description here
+    Function to process the consented allocation from the input tables from Accela and others.
+    More descriptions in the code below.
+
+    Parameters
+    ----------
+    param : dict
+        Input parameters
+    permit_use : DataFrame
+        DataFrame from the output of the process_use_types function
+
+    Returns
+    -------
+    DataFrame
     """
     run_time_start = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
     print(run_time_start)
@@ -104,9 +116,6 @@ def process_allo(param, permit_use):
 #     #-For consents that are active for one day, the toDate may now (because of extracting one day from toDate) be smaller than fmDate. Those records are removed
 #     df = df.loc[df['toDate']>=df['fmDate']]
 
-
-
-
     ## Clean data
     permits2 = db.permit.copy()
     permits2['FromDate'] = pd.to_datetime(permits2['FromDate'], infer_datetime_format=True, errors='coerce')
@@ -161,12 +170,8 @@ def process_allo(param, permit_use):
 
     wa4 = wa4[wa4.Wap.notnull()].copy()
 
-    # Distribute the months
-
-    ###-WILCO COMMENT
-    ###-I think it would be good to explain why it is what you are doing below. This is about the simplification/assumption that ['RecordNumber', 'TakeType', 'SwAllocationBlock', 'Wap']
-    ###-can have more than one record, meaning that there are different rates for different months, correct? I think this methodology could be explained a bit in detail so that the user
-    ###-knows/understands why/how this is done.
+    ## Distribute the months
+    # Since the tables in accela have no explicit primary/composite keys, it is possible that the eventual composite key 'RecordNumber', 'TakeType', 'SwAllocationBlock', 'Wap' does not fully caapture the Accela data set. It is possible that the rates also change by month. This occurs in less than 100 consents ever, so the simplification seems justified. The below code splits the consents out by each month that the consent is allowed to be active by the appropriate rates and volumes listed in the Accela table. Then the mean is taken over all months to ensure that there is only one value for 'RecordNumber', 'TakeType', 'SwAllocationBlock', 'Wap'.
 
     cols1 = wa4.columns.tolist()
     from_mon_pos = cols1.index('FromMonth')
@@ -218,7 +223,7 @@ def process_allo(param, permit_use):
     wa8.loc[wa8.LowflowCondition.isnull(), 'LowflowCondition'] = False
 
     ## Distribute the rates according to the stream depletion requirements
-    ## According to the LWRP!
+    ## According to the LWRP Schedule 9!
 
     allo_rates1 = wa8.drop_duplicates(['RecordNumber', 'SwAllocationBlock', 'Wap']).set_index(['RecordNumber', 'SwAllocationBlock', 'Wap']).copy()
 
@@ -227,7 +232,7 @@ def process_allo(param, permit_use):
     allo_rates1['RateWeekly'] = (allo_rates1['VolumeWeekly'] / 7 / 24 / 60 / 60) * 1000
     allo_rates1['Rate150Day'] = (allo_rates1['Volume150Day'] / 150 / 24 / 60 / 60) * 1000
 
-    # SD categories - According to the LWRP! Reference the schedules!
+    # SD categories - According to the LWRP! Schedule 9.
     rate_bool = (allo_rates1['Rate150Day'] * (allo_rates1['SD1_150Day'] * 0.01)) > 5
 
     allo_rates1['sd_cat'] = 'low'
@@ -261,16 +266,13 @@ def process_allo(param, permit_use):
     rates1['Surface Water'] = 0
     rates1['Groundwater'] = 0
 
-    ##-WILCO COMMENT: I do not see a surface water rate calculation below for the 'low' category. Does that mean the SD rate is always zero for this category? # Mike response: Yes!
-
     rates1.loc[gw_bool, 'Groundwater'] = rates1.loc[gw_bool, 'Rate150Day']
     rates1.loc[mod_bool | high_bool, 'Surface Water'] = rates1.loc[mod_bool | high_bool, 'Rate150Day'] * (rates1.loc[mod_bool | high_bool, 'SD1_150Day'] * 0.01)
 
-    #-WILCO COMMENT: Explain what is happening below. This is related to aquifer tests, correct? And if those tests have been done, then the sd rate is extracted from the gw allocation, correct? Reference the new method doc/schedule.
+    # The below boolean query is directly related to Schedule 9 and the consented allocation document by Matt Smith and Don
     alt_bool = gw_bool & (((rates1.Storativity | lf_cond_bool) & (mod_bool | high_bool)) | rates1.Combined)
     rates1.loc[alt_bool, 'Groundwater'] = rates1.loc[alt_bool, 'Rate150Day']  - rates1.loc[alt_bool, 'Surface Water']
 
-    #-WICLO COMMENT: I guess here you allocate the full daily groundwater rate to sw allocation if it is classified as 'direct' ? Mike response: Yes!
     rates1.loc[direct_bool & gw_bool, 'Surface Water'] = rates1.loc[direct_bool & gw_bool, 'RateDaily']
     rates1.loc[(direct_bool & gw_bool) & (rates1.Storativity | lf_cond_bool), 'Groundwater'] = 0
 

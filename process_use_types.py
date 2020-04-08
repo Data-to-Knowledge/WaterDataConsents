@@ -16,7 +16,16 @@ from pdsf import sflake as sf
 
 def process_use_types(param):
     """
+    Function to assign a primary use type to each consented take from the accela tables. It uses a use type mapping table and a priority table.
 
+    Parameters
+    ----------
+    param : dict
+        Input parameters
+
+    Returns
+    -------
+    DataFrame
     """
     run_time_start = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
     print(run_time_start)

@@ -12,7 +12,18 @@ from utils import process_limit_data, assign_notes, extract_spatial_units
 
 def process_limits(param, json_lst):
     """
+    Function to take the plan limits data from the API and summarize them for the currently operative limits. Ultimately saved to two snowflake tables. One for GW and one for SW.
 
+    Parameters
+    ----------
+    param : dict
+        Input parameters
+    json_lst : list
+        list of json docs from the plan limits api.
+
+    Returns
+    -------
+    DataFrame
     """
 
     run_time_start = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')

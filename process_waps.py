@@ -20,14 +20,22 @@ import geopandas as gpd
 
 def process_waps(param, json_lst):
     """
-    
-    WILCO comments/questions:
-    1) What is the function of this script? I assume it is some sort of spatial selection of WAPs ? Think it would be good to add the function description here....
-    2) Is the WAP selection done on locations within polygons, or neareast distance to streams? For stream depletion it is probably better to use the SD coordinates instead of the
-        WAP coordinates.....
-    3) And what does this function return? Is it a pandas dataframe? 
-    
-    
+    This function/process does two main procedures: 1) It combines several tables that contains site specific info, and 2) Determines where each points lays within the GW zones GIS layer and nearest to the River Reach GIS layer.
+
+    The GW zones layer is a polygon layer, so each point is simply assigned to the specific polygon it lays within. The river reach layer is a polyline layer. The input points are assigned to the river segment that has a node closest to the point.
+
+    Once the processing is done, it saves the resulting DataFrame to Snowflake.
+
+    Parameters
+    ----------
+    param : dict
+        Input parameters
+    json_lst : list
+        list of json docs from the plan limits api.
+
+    Returns
+    -------
+    DataFrame
     """
     run_time_start = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
     print(run_time_start)
