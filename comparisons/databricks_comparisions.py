@@ -48,10 +48,3 @@ for t in tables:
     else:
         print('problems...')
         diff_dict[t] = comp_dict
-
-
-
-
-
-
-

@@ -18,7 +18,7 @@ import geopandas as gpd
 ### Function
 
 
-def process_waps(param, json_lst):
+def process_waps(param):
     """
     This function/process does two main procedures: 1) It combines several tables that contains site specific info, and 2) Determines where each points lays within the GW zones GIS layer and nearest to the River Reach GIS layer.
 
@@ -30,8 +30,6 @@ def process_waps(param, json_lst):
     ----------
     param : dict
         Input parameters
-    json_lst : list
-        list of json docs from the plan limits api.
 
     Returns
     -------

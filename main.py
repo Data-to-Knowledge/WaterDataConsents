@@ -53,7 +53,7 @@ json_lst = json_filters(json_lst1, only_operative=True)
 
 print('---Process the Waps')
 #-WILCO: see my comments in the process_waps.py file
-waps = process_waps(param, json_lst)
+waps = process_waps(param)
 
 print('---Process use types')
 permit_use, use_mapping = process_use_types(param)
