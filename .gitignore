@@ -17,3 +17,5 @@ scripts/__pycache__/
 
 # Docker parameters
 param*.yml
+/.project
+/.pydevproject
